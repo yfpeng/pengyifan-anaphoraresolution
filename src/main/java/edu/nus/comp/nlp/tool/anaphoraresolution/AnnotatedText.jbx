@@ -1,0 +1,14 @@
+[PropertyInfo]
+GlobalList,Vector,false,false, , ,false,<default>
+NPList,Vector,false,false, , ,true,<default>
+PRPList,Vector,false,false, , ,true,<default>
+rootNode,DefaultMutableTreeNode,false,false, , ,false,<default>
+sents,Vector,false,false, , ,false,<default>
+SNPList,Vector,false,false, , ,true,<default>
+text,StringBuffer,false,false, , ,false,<default>
+tree,DefaultMutableTreeNode,false,false, , ,true,<default>
+[IconNames]
+
+
+
+
