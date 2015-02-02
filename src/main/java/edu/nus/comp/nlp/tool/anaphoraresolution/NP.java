@@ -25,6 +25,7 @@
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
 import java.util.*;
+
 import javax.swing.tree.*;
 
 /**
@@ -36,9 +37,8 @@ import javax.swing.tree.*;
  * @version 1.0
  */
 
-public class NP {
-  /*Type*/
-  public final static int DEF = 1; //definite NP;
+class NP {
+  
   public final static int PLEO = 2; //pleonastic pronoun;
   public final static int PRON = 3; //other pronoun;
   public final static int INDEF = 4; //indefinite NP;
@@ -51,34 +51,34 @@ public class NP {
   public final static int FEMALE = 2;
 
   //type of the Unit;
-  int type = NP.INDEF;
+  private int type = NP.INDEF;
   //number and gender;
-  int number = NP.SINGLE;
-  int gender = NP.NULL;
-  boolean existential = false;
-  boolean subject = false;
-  boolean directObj = false;
-  boolean indirectObj = false;
-  boolean isHead = false;
-  boolean isInADVP = false;
+  private int number = NP.SINGLE;
+  private int gender = NP.NULL;
+  private boolean existential = false;
+  private boolean subject = false;
+  private boolean directObj = false;
+  private boolean indirectObj = false;
+  private boolean isHead = false;
+  private boolean isInADVP = false;
   //Indicates whether this NP is part of a "NNX (NNX)+" combination
   //The probability of such a NP being a good antecedent of an anaphor plumbs.
-  boolean hasNNXsibling = false;
+  private boolean hasNNXsibling = false;
   //index of the sentence where UNIT is localized. 0 based
-  int sentIdx;
+  private int sentIdx;
   //distance between the beinning of the sentence and the first word in UNIT;
-  int offset;
+  private int offset;
 
-  DefaultMutableTreeNode nodeRepresent = null;
+  private DefaultMutableTreeNode nodeRepresent = null;
 
-  Vector tagWord = new Vector(); //containing instances of TagWord
+  Vector<TagWord> tagWord = new Vector<TagWord>(); //containing instances of TagWord
 
-  public NP(int sIdx, int offset) {
+  NP(int sIdx, int offset) {
     this.sentIdx = sIdx;
     this.offset = offset;
   }
 
-  public NP(int sIdx, int offset, String annotatedNP) {
+  NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
     Util.analyseTagWordPairs(annotatedNP, tagWord, sIdx);
@@ -130,10 +130,6 @@ public class NP {
     hasNNXsibling = b;
   }
 
-  public boolean hasNNXsibling(){
-    return hasNNXsibling;
-  }
-
   public void setHead(boolean b) {
     this.isHead = b;
     /*
@@ -159,7 +155,7 @@ public class NP {
         TagWord aTagWord = (TagWord) tagWord.elementAt(0);
         String tag = aTagWord.tag;
         if (tag.startsWith("PRP")) {
-          this.type = this.PRON;
+          this.type = NP.PRON;
         }
         break;
       default:
@@ -179,7 +175,7 @@ public class NP {
     return this.offset;
   }
 
-  public boolean contains(NP np) {
+  boolean contains(NP np) {
     return np.getNodeRepresent().isNodeAncestor(this.getNodeRepresent());
     /*
     String s = this.tagWord.toString();
@@ -231,21 +227,13 @@ public class NP {
     return tw.getContent( ).toLowerCase().startsWith("it");//it its itself
   }
 
-  public boolean hasGrandchildren(){
-    boolean b = false;
-    DefaultMutableTreeNode node = getNodeRepresent();
-    if(node!=null){
-      if((node.getChildCount()+1)<tagWord.size()){
-       b = true;
-      }
-    }
-    return b;
-  }
+  
 
   /**
    * @return true if there is a "CC and" in children
    */
-  public boolean hasAnd(){
+  boolean hasAnd(){
+    @SuppressWarnings("rawtypes")
     Enumeration enumer = getNodeRepresent().children();
     while(enumer.hasMoreElements()){
       DefaultMutableTreeNode aChild = (DefaultMutableTreeNode)enumer.nextElement();
@@ -265,16 +253,13 @@ public class NP {
     return this.nodeRepresent;
   }
 
-  public int getSalience(NP otherNP) {
+  int getSalience(NP otherNP) {
     return this.getSentenceIdx() == otherNP.getSentenceIdx() ?
         getFixedSalience() + 100
         : getFixedSalience();
   }
 
-  //older version
-  public int getSalienceBak(NP otherNP) {
-    return getFixedSalience() + 100;///(1+ Math.abs(this.getSentenceIdx() - otherNP.getSentenceIdx()));
-  }
+  
 
   /**
    * merge all salience factors true for palNP, salience factors for palNP remain unchanged

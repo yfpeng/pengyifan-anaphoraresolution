@@ -34,9 +34,9 @@ import java.util.*;
  * @version 1.0
  */
 
-public class ModalAdj {
+class ModalAdj {
   //add more inflected words
-  private static final HashSet adj = new HashSet(Arrays.asList(
+  private static final HashSet<String> adj = new HashSet<String>(Arrays.asList(
       ("announced necessary possible certain likely important good useful "
        +"advisable convenient sufficient economical easy desirable difficult legal perfect "
        +"unnecessary impossible uncertain unlikely unimportant bad useless "
@@ -48,7 +48,7 @@ public class ModalAdj {
   public ModalAdj() {
   }
 
-  public static boolean contains(String word){
+  static boolean contains(String word){
     return adj.contains(word);
   }
 

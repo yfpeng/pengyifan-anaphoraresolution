@@ -35,18 +35,14 @@ import java.util.Comparator;
  * @version 1.0
  */
 
-public class TagWordSalienceComp implements Comparator {
+class TagWordSalienceComp implements Comparator<TagWord> {
 
   public TagWordSalienceComp() {
   }
-  public static void main(String[] args) {
-    TagWordSalienceComp tagWordSalienceComp1 = new TagWordSalienceComp();
-  }
-  public int compare(Object o1, Object o2) {
-    TagWord tw1 = (TagWord)o1;
-    TagWord tw2 = (TagWord)o2;
+  public int compare(TagWord tw1, TagWord tw2) {
     return tw1.getTmpSalience()-tw2.getTmpSalience();
   }
+
   public boolean equals(Object obj) {
     /**@todo Implement this java.util.Comparator method*/
     throw new java.lang.UnsupportedOperationException("Method equals() not yet implemented.");

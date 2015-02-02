@@ -44,6 +44,10 @@ import javax.swing.tree.*;
  */
 
 public class Util {
+  
+  static {
+    Env env = new Env();
+  }
 
   public Util() {
   }
@@ -218,7 +222,7 @@ public class Util {
     write(fileName, content, false);
   }
 
-  public static Vector analyseTagWordPairs(String aNP, Vector vec, int sIdx) {
+  public static Vector<TagWord> analyseTagWordPairs(String aNP, Vector<TagWord> vec, int sIdx) {
     int pointer = 0; //to indicate position in the string
     int adjPointer = 0; //adjunct pointer
     String tag = null;
@@ -227,7 +231,6 @@ public class Util {
       return vec;
     }
 
-    int offset = 0;
     while (pointer >= 0) {
       pointer = aNP.indexOf("(", pointer);
       if (pointer == -1) {
@@ -263,7 +266,6 @@ public class Util {
     }
 
     for (int i = 0; i < target.length(); i++) {
-      String monitor = target.substring(i);
       if (target.charAt(i) == matcheeL.charAt(0)) {
         depth++;
       }
@@ -283,10 +285,8 @@ public class Util {
   static public DefaultMutableTreeNode convertSentenceToTreeNode(int sIdx,
       String annotedText, String delimL, String delimR) {
     DefaultMutableTreeNode node = new DefaultMutableTreeNode();
-    int leadPos = annotedText.indexOf(delimL);
     int endPos = findMatcher(annotedText, delimL, delimR);
 
-    int monitorInt = annotedText.length();
     if (endPos == (annotedText.length() - 1)) {
       node.setUserObject(new TagWord(annotedText, sIdx, -1));
       addChildren(sIdx, node,
@@ -312,12 +312,9 @@ public class Util {
       return;
     }
     int endPos = findMatcher(annotedText, delimL, delimR);
-    int leng = annotedText.length();
     if (endPos == (annotedText.length() - 1)) {
       DefaultMutableTreeNode singleChild = new DefaultMutableTreeNode(new
           TagWord(annotedText, sIdx, -1));
-      String a = parentNode.toString();
-      String b = singleChild.toString();
       if (!singleChild.toString().equalsIgnoreCase(parentNode.toString())) {
         parentNode.add(singleChild);
         if (annotedText.indexOf(delimL, 1) == -1) {
@@ -341,7 +338,6 @@ public class Util {
       return;
     }
     while (endPos <= (annotedText.length() - 1)) {
-      String achild = annotedText.substring(leadPos, endPos + 1);
       DefaultMutableTreeNode aChild =
           new DefaultMutableTreeNode(new TagWord(annotedText.substring(leadPos,
           endPos + 1), sIdx, -1));
@@ -353,8 +349,6 @@ public class Util {
       if (leadPos == -1) {
         return;
       }
-      String monitor2 = annotedText.substring(annotedText.indexOf(delimL,
-          leadPos));
       endPos = findMatcher(annotedText.substring(annotedText.indexOf(delimL,
           leadPos)), delimL, delimR);
       endPos += annotedText.indexOf(delimL, leadPos);
@@ -379,6 +373,7 @@ public class Util {
       return;
     }
     int offset = 0; // syntatic unit index, zero based
+    @SuppressWarnings("rawtypes")
     Enumeration enumeration = n.postorderEnumeration();
     while (enumeration.hasMoreElements()) {
       DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) enumeration.
@@ -405,6 +400,7 @@ public class Util {
   }
 
   public static void treeNodeTest(DefaultMutableTreeNode n) {
+    @SuppressWarnings("rawtypes")
     Enumeration enumeration = n.breadthFirstEnumeration();
     int count = 0;
     while (enumeration.hasMoreElements()) {
@@ -498,10 +494,10 @@ public class Util {
     return output;
   }
 
-  public static void resolverBaseline(Vector aNPList) {
-    Iterator iterator = aNPList.iterator();
+  public static void resolverBaseline(Vector<TagWord> aNPList) {
+    Iterator<TagWord> iterator = aNPList.iterator();
     NP np = new NP(0, 0);
-    Stack NPStack = new Stack();
+    Stack<NP> NPStack = new Stack<NP>();
     boolean matched = false;
     while (iterator.hasNext()) {
       np = ( (TagWord) iterator.next()).getNPRepresentation();
@@ -527,15 +523,15 @@ public class Util {
     }
   }
 
-  public static Vector resolverV1(Vector aNPList, Vector aPRPList) {
-    Vector results = new Vector(); //to display
-    Vector resultsOut = new Vector(); //for substitution
+  public static Vector<CorreferencialPair> resolverV1(Vector<TagWord> aNPList, Vector<TagWord> aPRPList) {
+    Vector<String> results = new Vector<String>(); //to display
+    Vector<CorreferencialPair> resultsOut = new Vector<CorreferencialPair>(); //for substitution
     int scope = 1; //How many sentences to look back. /****para****/
     int threshhold = 30;
     TagWordSalienceComp twComp = new TagWordSalienceComp();
 
-    Iterator npIterator = aNPList.iterator();
-    Iterator prpIterator = aPRPList.iterator();
+    Iterator<TagWord> npIterator = aNPList.iterator();
+    Iterator<TagWord> prpIterator = aPRPList.iterator();
     boolean foundMatcher = false;
 
     while (prpIterator.hasNext()) {
@@ -545,9 +541,9 @@ public class Util {
 
       //label pleonastic pronoun's anaphoraic antecedence as NULL and procede
       if (prpTw.isPleonastic()) {
-        Object obj = null;
+        TagWord obj = null;
         results.add(processResult(obj, prpTw));
-        resultsOut.add(new CorreferencialPair( (TagWord) obj, prpTw));
+        resultsOut.add(new CorreferencialPair(obj, prpTw));
         continue;
       }
 
@@ -557,7 +553,7 @@ public class Util {
       }
 
       npIterator = aNPList.iterator(); //rewind
-      Vector npCandidates = new Vector();
+      Vector<TagWord> npCandidates = new Vector<TagWord>();
       while (npIterator.hasNext()) {
         TagWord npTw = (TagWord) npIterator.next();
         //skip pleonastic NP, whose only child is pleonastic pronoun 'it'
@@ -599,12 +595,6 @@ public class Util {
         //filtering
         NP prpNP = prpTw.getNPRepresentation();
         DefaultMutableTreeNode prpNode = prpNP.getNodeRepresent();
-        NP npNP = npTw.getNPRepresentation();
-        DefaultMutableTreeNode npNode = npNP.getNodeRepresent();
-
-        if ( (prpTw.getSentenceIdx() == 30) && npTw.getSentenceIdx() == 30) {
-          boolean debugstop = true;
-        }
 
         if (prpNP.isReflexive()) {
           if (matchLexcialAnaphor(npTw, prpTw)) {
@@ -648,20 +638,17 @@ public class Util {
       }
 
       if (!foundMatcher) {
-        Object[] sortedCandidates = npCandidates.toArray();
+        TagWord[] sortedCandidates = npCandidates.toArray(new TagWord[0]);
         Arrays.sort(sortedCandidates, twComp);
 
         //result
 
-        Object obj = getBestCandidate(sortedCandidates, prpTw);
+        TagWord obj = getBestCandidate(sortedCandidates, prpTw);
         results.add(processResult(obj, prpTw));
 
         if (obj != null) {
           NP prpNP = prpTw.getNPRepresentation();
           DefaultMutableTreeNode prpNode = prpNP.getNodeRepresent();
-          NP npNP = ( (TagWord) obj).getNPRepresentation();
-          DefaultMutableTreeNode npNode = npNP.getNodeRepresent();
-
           //building NP chains whose 'rings' are refering to the same thing.
           if (prpNode.getSiblingCount() == 1) {
             //this PRP is the only child of the NP parent
@@ -713,8 +700,8 @@ public class Util {
     return resultsOut;
   }
 
-  private static Object getBestCandidate(Object[] sortedCandidates, TagWord tw) {
-    Object obj = null;
+  private static TagWord getBestCandidate(TagWord[] sortedCandidates, TagWord tw) {
+    TagWord obj = null;
 
     //Check for empty candidate list
     if (sortedCandidates.length == 0) {
@@ -862,7 +849,7 @@ public class Util {
     }
   }
 
-  static String processResult(Object np, Object referer) {
+  static String processResult(TagWord np, TagWord referer) {
     String refereeStr = null;
     String anaphorStr = null;
     if (np == null) {
@@ -880,14 +867,14 @@ public class Util {
     }
     else {
       if (System.getProperty("referenceChain").equals("false")) { //true/undefine by default
-        refereeStr = ( (TagWord) np).toStringBrief();
+        refereeStr = np.toStringBrief();
       }
       else {
-        refereeStr = ( ( (TagWord) np).getAntecedent()).toStringBrief(); //Bind to the earliest NP****para****
+        refereeStr = np.getAntecedent().toStringBrief(); //Bind to the earliest NP****para****
       }
       //update salience factors for the detected coreferencial pair
-      ( (TagWord) np).mergeSalience( (TagWord) referer);
-      ( (TagWord) referer).mergeSalience( (TagWord) np);
+      np.mergeSalience(referer);
+      referer.mergeSalience(np);
     }
     anaphorStr = ( (TagWord) referer).toStringBrief();
     return "\n" + refereeStr + " <-- " + anaphorStr;
@@ -898,6 +885,7 @@ public class Util {
     //Build sentArray
 
     String aSentStr;
+    @SuppressWarnings("rawtypes")
     Enumeration sentences = root.children();
     StringBuffer[] sentArray = new StringBuffer[root.getChildCount()];
     int i = 0;
@@ -968,6 +956,7 @@ public class Util {
     }
     //Build sentArray
     String aSentStr;
+    @SuppressWarnings("rawtypes")
     Enumeration sentences = root.children();
     String[][] sentArray = new String[root.getChildCount()][];
     int i = 0;

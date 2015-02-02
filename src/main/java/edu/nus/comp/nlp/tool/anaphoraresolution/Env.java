@@ -34,7 +34,7 @@ import java.util.regex.*;
  * @version 1.0
  */
 
-public class Env {
+class Env {
 
   static {
 

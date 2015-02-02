@@ -48,29 +48,29 @@ import java.util.regex.*;
  */
 
 public class TagWord {
-  int depth = 0; //depth in the parse tree;
+  private int depth = 0; //depth in the parse tree;
   int sIdx; //indicates sentence
-  int offset; //offset of the word as a whole in the sentence
-  int number = 1; //0:single, 1:unclear, 2:plural
-  int gender = 1; //0 for Male, 2 for Female and 1 for unclear
-  int human = 1; //0 for human, 2 for none-human 1 for unclear
-  int people = 0;//o for unclear, 1 for first, 2 for second and 3 for third
-  boolean pleonastic = false; //represents a pleonastic pronoun
+  private int offset; //offset of the word as a whole in the sentence
+  private int number = 1; //0:single, 1:unclear, 2:plural
+  private int gender = 1; //0 for Male, 2 for Female and 1 for unclear
+  private int human = 1; //0 for human, 2 for none-human 1 for unclear
+  private int people = 0;//o for unclear, 1 for first, 2 for second and 3 for third
+  private boolean pleonastic = false; //represents a pleonastic pronoun
 
   String tag;
   String word;
-  boolean isHeadNP = false;
-  boolean hasNPAncestor = false;
-  DefaultMutableTreeNode head = null; //reference to the head for this NP
-  DefaultMutableTreeNode argumentHead = null; //the head as this NP is augument for
-  DefaultMutableTreeNode argumentHost = null; //the other np as augument for the same head
-  DefaultMutableTreeNode adjunctHost = null; //the unit as adjunct for
-  DefaultMutableTreeNode NPDomainHost = null;
-  DefaultMutableTreeNode determiner = null;
-  DefaultMutableTreeNode determinee = null;
-  Vector containHost = new Vector();
-  NP npRepresentation = null;
-  TagWord antecedent = null;
+  private boolean isHeadNP = false;
+  private boolean hasNPAncestor = false;
+  private DefaultMutableTreeNode head = null; //reference to the head for this NP
+  private DefaultMutableTreeNode argumentHead = null; //the head as this NP is augument for
+  private DefaultMutableTreeNode argumentHost = null; //the other np as augument for the same head
+  private DefaultMutableTreeNode adjunctHost = null; //the unit as adjunct for
+  private DefaultMutableTreeNode NPDomainHost = null;
+  private DefaultMutableTreeNode determiner = null;
+  private DefaultMutableTreeNode determinee = null;
+  private Vector<DefaultMutableTreeNode> containHost = new Vector<DefaultMutableTreeNode>();
+  private NP npRepresentation = null;
+  private TagWord antecedent = null;
 
   //the dynamically updated salience value
   int tmpSalience = 0;
@@ -373,11 +373,11 @@ public class TagWord {
     this.containHost.add(n);
   }
 
-  public void setContainHost(Vector n) {
+  public void setContainHost(Vector<DefaultMutableTreeNode> n) {
     this.containHost.addAll(n);
   }
 
-  public java.util.Vector getContainHost() {
+  public java.util.Vector<DefaultMutableTreeNode> getContainHost() {
     return this.containHost;
   }
 
@@ -477,7 +477,6 @@ public class TagWord {
 
   public String getContent() {
 
-    String w = word;
     if (word.indexOf(")") == -1) {
       //word = " something"
       return word;
@@ -628,10 +627,10 @@ class HumanList {
 
   final static int numberOfNameToCheck = -1; //3000; //check only the first xx most common first names, respectively
 //  final static Hashtable maleNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"male_first.txt",numberOfNameToCheck);
-  final static Hashtable maleNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"MostCommonMaleFirstNamesInUS.mongabay.txt",numberOfNameToCheck);
-  final static Hashtable femaleNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"female_first.txt",numberOfNameToCheck);
-  final static Hashtable humanOccupationTb = getNameTb(System.getProperty("dataPath") + File.separator +"personTitle.txt");
-  final static Hashtable lastNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"name_last.txt");
+  final static Hashtable<String, String> maleNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"MostCommonMaleFirstNamesInUS.mongabay.txt",numberOfNameToCheck);
+  final static Hashtable<String, String> femaleNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"female_first.txt",numberOfNameToCheck);
+  final static Hashtable<String, String> humanOccupationTb = getNameTb(System.getProperty("dataPath") + File.separator +"personTitle.txt");
+  final static Hashtable<String, String> lastNameTb = getNameTb(System.getProperty("dataPath") + File.separator +"name_last.txt");
 
 
   public HumanList() {
@@ -712,7 +711,7 @@ public static boolean contains(String[] list, String str) {
     return contain;
   }
 
-  public static boolean contains(Hashtable tb, String wd){
+  public static boolean contains(Hashtable<String, String> tb, String wd){
     return tb.containsKey(wd);
   }
 
@@ -720,13 +719,13 @@ public static boolean contains(String[] list, String str) {
     return Util.read(listFile).toString().split("\\s+");
   }
 
-  private static Hashtable getNameTb(String listFile){
+  private static Hashtable<String, String> getNameTb(String listFile){
     return getNameTb(listFile,-1);
   }
 
-  private static Hashtable getNameTb(String listFile,int range){
+  private static Hashtable<String, String> getNameTb(String listFile,int range){
      String[] nameArray = retriveList(listFile);
-     Hashtable tb = new Hashtable();
+     Hashtable<String, String> tb = new Hashtable<String, String>();
 
      if(nameArray.length <=0){
        System.err.println(listFile +" not found. Please download the latest data files. \n System quit.");
