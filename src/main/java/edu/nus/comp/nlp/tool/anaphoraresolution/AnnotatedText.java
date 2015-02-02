@@ -1,19 +1,26 @@
-/*
+/**
  * JavaRAP: a freely-available JAVA anaphora resolution implementation of the
- * classic Lappin and Leass (1994) paper: An Algorithm for Pronominal Anaphora
- * Resolution. Computational Linguistics, 20(4), pp. 535-561. Copyright (C)
- * 2005 Long Qiu This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version. This program is distributed in the hope that it
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. You should have received a copy of the GNU
- * General Public License along with this program; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
+ * classic Lappin and Leass (1994) paper:
+ * 
+ * An Algorithm for Pronominal Anaphora Resolution. Computational Linguistics,
+ * 20(4), pp. 535-561.
+ * 
+ * Copyright (C) 2005 Long Qiu
+ * 
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
 import java.util.*;
@@ -21,32 +28,20 @@ import java.util.*;
 import javax.swing.tree.*;
 
 /**
- * <p>
- * Title: Anaphora Resolution
- * </p>
- * <p>
- * Description: Class to deal with Charniak parser output.
- * </p>
- * <p>
- * Copyright: Copyright (c) 2003
- * </p>
- * <p>
- * Company:
- * </p>
- * 
  * @author Qiu Long
  * @version 1.0
+ * @author "Yifan Peng"
  */
 
 public class AnnotatedText {
 
   private Vector<String> sents = new Vector<String>();
-  private Vector<TagWord> NPList = new Vector<TagWord>(); // DefaultMutableTreeNode instance
-                                // inside.overlapping allowed
-  private Vector<TagWord> SNPList = new Vector<TagWord>();// DefaultMutableTreeNode instance
-                                // inside.overlapping disallowed
-  private Vector<TagWord> PRPList = new Vector<TagWord>();// DefaultMutableTreeNode instance
-                                // inside.overlapping disallowed
+  // DefaultMutableTreeNode instance inside.overlapping allowed
+  private Vector<TagWord> NPList = new Vector<TagWord>();
+  // DefaultMutableTreeNode instance inside.overlapping disallowed
+  private Vector<TagWord> SNPList = new Vector<TagWord>();
+  // DefaultMutableTreeNode instance inside.overlapping disallowed
+  private Vector<TagWord> PRPList = new Vector<TagWord>();
 
   private Vector<Vector<TagWord>> GlobalList = new Vector<Vector<TagWord>>();
   private DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
@@ -64,7 +59,8 @@ public class AnnotatedText {
 
   private void segment() {
     if (text != null) {
-      List<String> sentenceList = Arrays.asList(text.toString().split("\\(S1 "));
+      List<String> sentenceList = Arrays
+          .asList(text.toString().split("\\(S1 "));
       ListIterator<String> iterator = sentenceList.listIterator();
       int sIdx = 0;
       String sentence = null;
@@ -74,7 +70,10 @@ public class AnnotatedText {
         if (sentence.trim().length() > 0) {
           sents.add(sIdx, "(S1 " + sentence.trim());
           GlobalList
-              .add(Util.analyseTagWordPairs(sentence, new Vector<TagWord>(), sIdx));
+              .add(Util.analyseTagWordPairs(
+                  sentence,
+                  new Vector<TagWord>(),
+                  sIdx));
           // NPList.addAll(extractNP(sentence,sIdx));
           sIdx++;
         }
