@@ -53,13 +53,14 @@ public class Env {
 
 
     //environment
-    String environmentFileName = "env.jrap";//the file stores the environment variables (path to the Charniak parser, etc.)
+    ClassLoader classLoader = Env.class.getClassLoader();
+    String environmentFileName = classLoader.getResource("env.jrap").getFile();//the file stores the environment variables (path to the Charniak parser, etc.)
     String parserHomeDir = null;
     String dataPath = null;
     String outputDir = null;
     String tmpDir = null;
     try{
-      File environmentFile =  new File(".", environmentFileName);
+      File environmentFile =  new File(environmentFileName);
 
         //locate
         String pathDelim = System.getProperty("path.separator");
@@ -103,11 +104,7 @@ public class Env {
           }
         }
         if (fields[0].equalsIgnoreCase("dataPath")) {
-          dataPath = fields[1].trim();
-          if(dataPath.startsWith(".")){ //./... relative path
-             dataPath = classpath+dataPath.substring(2);
-          }
-
+          dataPath = classLoader.getResource("Data").getFile();
         }
         if (fields[0].equalsIgnoreCase("outputDir")) {
           outputDir = fields[1].trim();
