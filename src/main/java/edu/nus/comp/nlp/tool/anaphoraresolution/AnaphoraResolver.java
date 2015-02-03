@@ -30,6 +30,8 @@ import java.util.regex.*;
 
 import javax.swing.tree.*;
 
+import org.apache.commons.io.FileUtils;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -78,173 +80,13 @@ public class AnaphoraResolver {
     System.setProperty("parserOption", " ");
   }
 
-  /**
-   * Filter out none-sentence part in TREC plain text corpus 27 nusmml2003
-   * XIE19960317.0175 Like most of the world 's subway systems , the lines
-   * operate at a loss .
-   * 
-   * @param fileName
-   * @return
-   */
-  public static StringBuffer corpusRead(String fileName) {
-    StringBuffer sb = new StringBuffer();
-    try {
-      BufferedReader in =
-          new BufferedReader(new FileReader(fileName));
-      String s;
-      Pattern p = Pattern.compile("(\\d)+\\s+\\S+\\s+\\S+\\s+");
-      while ((s = in.readLine()) != null) {
-        Matcher m = p.matcher(s);
-        if (m.find() && (m.start() == 0)) {
-          sb.append(s.substring(m.end()));
-          sb.append(System.getProperty("line.separator"));
-        }
-      }
-      in.close();
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
-    return sb;
-  }
-
-  // older version of readFile.
-  public static StringBuffer readFile(String fileName) {
-    return readFile(fileName, null);
-  }
-
-  /**
-   * @param fileName
-   * @param commentFlag The leading character indicating a line of comment.
-   * @return The content, preferably plain text, of the file "fileName", with
-   *         the comments ignored.
-   */
-  public static StringBuffer readFile(String fileName, String commentFlag) {
-    StringBuffer sb = new StringBuffer();
-    try {
-      BufferedReader in =
-          new BufferedReader(new FileReader(fileName));
-      String s;
-      while ((s = in.readLine()) != null) {
-        if (commentFlag != null
-            && s.trim().startsWith(commentFlag)) {
-          // ignore this line
-          continue;
-        }
-        sb.append(s);
-        // sb.append("/n"); to make it more platform independent (Log July 12,
-        // 2004)
-        sb.append(System.getProperty("line.separator"));
-      }
-      in.close();
-    } catch (IOException ex) {
-      ex.printStackTrace();
-      System.exit(-1);
-    }
-    return sb;
-
-  }
-
-  public static StringBuffer read(String fileName) {
-    StringBuffer sb = new StringBuffer();
-    try {
-      BufferedReader in =
-          new BufferedReader(new FileReader(fileName));
-      String s;
-
-      while ((s = in.readLine()) != null) {
-        sb.append(s);
-        sb.append(System.getProperty("line.separator"));
-      }
-      in.close();
-    } catch (IOException ex) {
-      System.err.println(fileName + " not found. Please check it." +
-          System.getProperty("line.separator") + "Skipping...");
-    }
-    return sb;
-  }
-
-  public static String removeTag(String str) {
-    String rst = new String();
-    Pattern p = Pattern.compile("<[.[^<>]]+>");
-    Matcher m = p.matcher(str);
-    rst = m.replaceAll(" ");
-    return rst;
-  }
-
-  public static String removeBlankLine(String str) {
-    String rst = new String();
-    Pattern p = Pattern.compile("\n([\\s^\n]*\n[\\s^\n]*)+");
-    Matcher m = p.matcher(str);
-    rst = m.replaceAll("\n");
-    return rst;
-  }
-
-  public static String removeSpace(String str) {
-    return str.replaceAll("\\s", "");
-  }
-
-  public static String mergeDoubleSingleQuots(String str) {
-    return str.replaceAll("''|``", "\"");
-  }
-
-  public static void UnixSystemCall(String command, String outputFileName) {
-    try {
-      String[] cmd = {
-          "/bin/sh",
-          "-c",
-          "ulimit -s unlimited;" + command + "  > " + outputFileName };
-      Process proc = Runtime.getRuntime().exec(cmd);
-      proc.waitFor();
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.err.println("\"Wrong.\"Murmurs Util.java.");
-      System.exit(-1);
-    }
-  }
-
-  public static String UnixSystemCall(String command) {
-    String output = new String();
-    try {
-      String[] cmd = {
-          "/bin/sh",
-          "-c",
-          // "ulimit -s unlimited;" +
-          command };
-      Process proc = Runtime.getRuntime().exec(cmd);
-      BufferedReader in = new BufferedReader(new InputStreamReader(proc.
-          getInputStream()));
-      String s;
-      while ((s = in.readLine()) != null) {
-        output += s + "\n";
-      }
-      proc.waitFor();
-      in.close(); // Added by Qiu Long on Nov. 25, 2004
-      proc.destroy();
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.err.println("\"Wrong.\"Murmurs Util.java.");
-      System.exit(-1);
-    }
-    return output;
-  }
-
-  public static void write(String fileName, String content, boolean append) {
-
-    try {
-      PrintWriter out = new PrintWriter(
-          new BufferedWriter(new FileWriter(fileName, append)));
-      out.print(content);
-      out.close();
-    } catch (IOException ex) {
-      System.err.println("Can not open \"" + fileName +
-          "\" to write. Please check.");
-      System.exit(-1);
-    }
-  }
-
-  public static void write(String fileName, String content) {
-    write(fileName, content, false);
-  }
+  // private void write(String fileName, String content) {
+  // try {
+  // FileUtils.write(new File(fileName), content);
+  // } catch (IOException e) {
+  // e.printStackTrace();
+  // }
+  // }
 
   public static List<TagWord> analyseTagWordPairs(String aNP, int sIdx) {
     int pointer = 0; // to indicate position in the string
@@ -281,267 +123,6 @@ public class AnaphoraResolver {
     }
 
     return vec;
-  }
-
-  public static int
-      findMatcher(String target, String matcheeL, String matcherR) {
-    int loc = 0;
-    int depth = 0;
-    if (target.indexOf(matcheeL) == -1) {
-      return 0;
-    }
-
-    for (int i = 0; i < target.length(); i++) {
-      if (target.charAt(i) == matcheeL.charAt(0)) {
-        depth++;
-      }
-      else if (target.charAt(i) == matcherR.charAt(0)) {
-        depth--;
-      }
-      if (depth == 0) {
-        return i;
-      }
-    }
-    return loc;
-  }
-
-  /**
-   * Convert the output of Charniak parser for ~A single sentence~ into a
-   * TreeNode.
-   */
-  static public DefaultMutableTreeNode convertSentenceToTreeNode(
-      int sentenceIndex, String annotedText, String delimL, String delimR) {
-    DefaultMutableTreeNode node = new DefaultMutableTreeNode();
-    int endPos = findMatcher(annotedText, delimL, delimR);
-
-    if (endPos == (annotedText.length() - 1)) {
-      node.setUserObject(TagWord.parseTagWord(annotedText, sentenceIndex, -1));
-      addChildren(sentenceIndex, node,
-          annotedText.substring(annotedText.indexOf(" ") + 1,
-              annotedText.length() - 1), delimL,
-          delimR);
-    }
-    else {
-      System.err.print("Parsing result error:\n" + annotedText + "\n");
-      AnaphoraResolver.errLog("Parsing result error:\n" + annotedText + "\n");
-      return convertSentenceToTreeNode(sentenceIndex,
-          "(S1 (FRAG (NP (CD XIE20030000.0000)) (. .)))", delimL, delimR);
-    }
-    AnaphoraResolver.computeOffset(node);
-    return node;
-  }
-
-  static void addChildren(int sIdx, DefaultMutableTreeNode parentNode,
-      String annotedText, String delimL, String delimR) {
-    int leadPos = annotedText.indexOf(delimL);
-
-    if (leadPos == -1) {
-      return;
-    }
-    int endPos = findMatcher(annotedText, delimL, delimR);
-    if (endPos == (annotedText.length() - 1)) {
-      DefaultMutableTreeNode singleChild = new DefaultMutableTreeNode(
-          TagWord.parseTagWord(annotedText, sIdx, -1));
-      if (!singleChild.toString().equalsIgnoreCase(parentNode.toString())) {
-        parentNode.add(singleChild);
-        if (annotedText.indexOf(delimL, 1) == -1) {
-          return;
-        }
-        addChildren(sIdx, singleChild,
-            annotedText.substring(annotedText.indexOf(delimL, 1),
-                annotedText.length() - 1), delimL,
-            delimR);
-      }
-      else {
-        if (annotedText.indexOf(delimL, 1) == -1) {
-          return;
-        }
-        addChildren(sIdx, parentNode,
-            annotedText.substring(annotedText.indexOf(delimL, 1),
-                annotedText.length() - 1), delimL,
-            delimR);
-      }
-
-      return;
-    }
-    while (endPos <= (annotedText.length() - 1)) {
-      DefaultMutableTreeNode aChild =
-          new DefaultMutableTreeNode(TagWord.parseTagWord(
-              annotedText.substring(leadPos,
-                  endPos + 1),
-              sIdx,
-              -1));
-      parentNode.add(aChild);
-
-      addChildren(sIdx, aChild, annotedText.substring(leadPos, endPos + 1),
-          delimL, delimR);
-      leadPos = annotedText.indexOf(delimL, endPos);
-      if (leadPos == -1) {
-        return;
-      }
-      endPos = findMatcher(annotedText.substring(annotedText.indexOf(delimL,
-          leadPos)), delimL, delimR);
-      endPos += annotedText.indexOf(delimL, leadPos);
-    }
-
-  }
-
-  public static void computeOffset(DefaultMutableTreeNode n) {
-    String rootTag = null;
-
-    try {
-      rootTag = ((TagWord) n.getUserObject()).getTag();
-    } catch (Exception ex) {
-      System.out.println(n);
-      System.exit(0);
-    }
-
-    if (!rootTag.equalsIgnoreCase("S1")) {
-      // shouldn't assign offset to none-sentence
-      AnaphoraResolver.errLog("//shouldn't assign offset to none-sentence");
-      return;
-    }
-    int offset = 0; // syntatic unit index, zero based
-    @SuppressWarnings("rawtypes")
-    Enumeration enumeration = n.postorderEnumeration();
-    while (enumeration.hasMoreElements()) {
-      DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) enumeration
-          .
-          nextElement();
-      if (currentNode.isLeaf()) {
-        TagWord tw = (TagWord) currentNode.getUserObject();
-        tw.setWordIndex(offset++);
-      }
-      else {
-        TagWord tw = (TagWord) currentNode.getUserObject();
-        TagWord firstChildtw = (TagWord) (((DefaultMutableTreeNode)
-            currentNode.getFirstChild()).
-                getUserObject());
-        tw.setWordIndex(firstChildtw.getWordIndex());
-      }
-    }
-  }
-
-  public static void splitFile(String fileName, String delim) {
-    String[] segS = AnaphoraResolver.read(fileName).toString().split(delim);
-    for (int i = 0; i < segS.length; i++) {
-      AnaphoraResolver.write(fileName + "." + i, segS[i] + delim);
-    }
-  }
-
-  public static void treeNodeTest(DefaultMutableTreeNode n) {
-    @SuppressWarnings("rawtypes")
-    Enumeration enumeration = n.breadthFirstEnumeration();
-    int count = 0;
-    while (enumeration.hasMoreElements()) {
-      DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.
-          nextElement();
-      System.out.println(node.getDepth() + node.toString());
-      count++;
-    }
-    System.out.println(count + " nodes in total.");
-  }
-
-  public static void errLog(String errMsg) {
-    if (System.getProperty("keep log") != null &&
-        System.getProperty("keep log").equals("true")) {
-      write(System.getProperty("outputDir") + File.separator + "log",
-          errMsg + System.getProperty("line.separator"), true);
-    }
-    if (System.getProperty("display log") != null &&
-        System.getProperty("display log").equals("true")) {
-      System.out.println(errMsg);
-    }
-  }
-
-  public static void showMessage(String message, boolean b) {
-    if (!b) {
-      // quiet mode
-      return;
-    }
-    else {
-      System.out.println(message);
-    }
-  }
-
-  public static String parse(String command, String dataDir, String inputFile,
-      String outputFile) {
-    // OutputFile is not used anymore. The parse is returned instead.
-    String output = new String();
-
-    try {
-      if (!new java.io.File(dataDir).exists()) {
-        System.err.println(
-            "Can't initialize the parser properly. Please check the path: " +
-                command + " " + dataDir);
-        System.exit(-1);
-      }
-
-      Process proc = null;
-      if (System.getProperty("os.name").startsWith("Windows")) {
-        String[] cmd = {
-            "cmd",
-            "/c",
-            command
-                + " "
-                + System.getProperty("parserOption")
-                + dataDir
-                + " "
-                + inputFile };
-        // System.err.println("cmd /c  "+command + " " +
-        // System.getProperty("parserOption") + dataDir + " " + inputFile);
-        proc = Runtime.getRuntime().exec(cmd);
-      } else {
-        String[] cmd = {
-            "/bin/sh",
-            "-c",
-            "ulimit -s unlimited;" + command + " " +
-                System.getProperty("parserOption") + dataDir + " " + inputFile };
-        proc = Runtime.getRuntime().exec(cmd);
-      }
-
-      BufferedReader in = new BufferedReader(new InputStreamReader(proc.
-          getInputStream()));
-      String s;
-      while ((s = in.readLine()) != null) {
-        output += s + "\n";
-      }
-      proc.waitFor();
-      in.close(); // Added by Qiu Long on Nov. 25, 2004
-      proc.destroy();
-    } catch (Exception e) {
-      System.err.println("Wrong");
-    }
-    return output;
-  }
-
-  public static void resolverBaseline(List<TagWord> aNPList) {
-    Iterator<TagWord> iterator = aNPList.iterator();
-    NP np = new NP(0, 0);
-    Stack<NP> NPStack = new Stack<NP>();
-    boolean matched = false;
-    while (iterator.hasNext()) {
-      np = ((TagWord) iterator.next()).getNPRepresentation();
-      matched = false;
-      if (np.isPRP()) {
-
-        while (NPStack.size() != 0) {
-          NP inStack = (NP) NPStack.pop();
-          if (inStack.isHuman() == np.isHuman()) {
-            matched = true;
-            System.err.println(inStack + "<--->" + np);
-            NPStack.clear();
-            break;
-          }
-        }
-        if (!matched) {
-          System.err.println("NULL" + "<--->" + np);
-        }
-      }
-      else {
-        NPStack.push(np);
-      }
-    }
   }
 
   public List<CorreferencialPair> resolverV1(List<TagWord> aNPList,
@@ -593,12 +174,12 @@ public class AnaphoraResolver {
         }
 
         boolean b1 = prpTw == npTw;
-        boolean b2 = npTw.getNPRepresentation().getNodeRepresent().isNodeChild(
-            prpTw.getNPRepresentation().getNodeRepresent());
-        boolean b3 = npTw.getNPRepresentation().getNodeRepresent().
+        boolean b2 = npTw.getNP().getNodeRepresent().isNodeChild(
+            prpTw.getNP().getNodeRepresent());
+        boolean b3 = npTw.getNP().getNodeRepresent().
             getChildCount() == 1;
-        boolean b4 = (npTw.getNPRepresentation().getNodeRepresent().
-            isNodeDescendant(prpTw.getNPRepresentation().
+        boolean b4 = (npTw.getNP().getNodeRepresent().
+            isNodeDescendant(prpTw.getNP().
                 getNodeRepresent()));
         boolean b5 = b1 || (b2 && b3) || b4;
 
@@ -615,7 +196,7 @@ public class AnaphoraResolver {
         }
 
         // filtering
-        NP prpNP = prpTw.getNPRepresentation();
+        NP prpNP = prpTw.getNP();
         DefaultMutableTreeNode prpNode = prpNP.getNodeRepresent();
 
         if (prpNP.isReflexive()) {
@@ -672,7 +253,7 @@ public class AnaphoraResolver {
         results.add(processResult(obj, prpTw));
 
         if (obj != null) {
-          NP prpNP = prpTw.getNPRepresentation();
+          NP prpNP = prpTw.getNP();
           DefaultMutableTreeNode prpNode = prpNP.getNodeRepresent();
           // building NP chains whose 'rings' are refering to the same thing.
           if (prpNode.getSiblingCount() == 1) {
@@ -687,53 +268,20 @@ public class AnaphoraResolver {
           // true/undefine by default
           if (System.getProperty("referenceChain").equals("false")) {
             resultsOut.add(new CorreferencialPair((TagWord) obj, prpTw));
+          } else {
+            resultsOut.add(new CorreferencialPair(obj.getAntecedent(), prpTw));
           }
-          else {
-            resultsOut.add(new CorreferencialPair(((TagWord) obj).
-                getAntecedent(), prpTw));
-          }
-
-        }
-        else {
+        } else {
           // no candidate is found
-          resultsOut.add(new CorreferencialPair((TagWord) obj, prpTw));
+          resultsOut.add(new CorreferencialPair(obj, prpTw));
         }
       }
 
     }
-
-    String toWrite = null;
-    if (results.toString().length() > 2) {
-      toWrite = results.toString()
-          .substring(2, results.toString().length() - 1);
-    }
-    else {
-      toWrite = "null";
-    }
-    // make use of shortcut
-    if (System.getProperty("write resolving results") == null ||
-        System.getProperty("write resolving results").equals("true")) {
-      String resultsFileName = System.getProperty("outputDir")
-          + File.separator
-          +
-          "resolvingresults.txt";
-      // remove enclosing brackets
-      AnaphoraResolver.write(resultsFileName, toWrite);
-      AnaphoraResolver.errLog("Resolving Results written to file "
-          + resultsFileName);
-    }
-    AnaphoraResolver.errLog("***********Head of Results**************\n"
-        + toWrite
-        +
-        "\n***********End of Results***************\n");
-    AnaphoraResolver.showMessage(
-        "********Anaphor-antecedent pairs*****\n" + toWrite + "\n",
-        System.getProperty("display resolving results").equals(
-            "true"));
     return resultsOut;
   }
 
-  private static TagWord
+  private TagWord
       getBestCandidate(TagWord[] sortedCandidates, TagWord tw) {
     TagWord obj = null;
 
@@ -753,8 +301,8 @@ public class AnaphoraResolver {
           // take closer one
           obj = tw0;
         }
-        else if (tw0.getNPRepresentation().getNodeRepresent().isNodeAncestor(
-            tw1.getNPRepresentation().getNodeRepresent())) {
+        else if (tw0.getNP().getNodeRepresent().isNodeAncestor(
+            tw1.getNP().getNodeRepresent())) {
           // take child
           obj = tw0;
         }
@@ -773,10 +321,10 @@ public class AnaphoraResolver {
    * @param lexTw
    * @return true if the two NPs are highly likely to be co-reference
    */
-  private static boolean matchLexcialAnaphor(TagWord npTw, TagWord lexTw) {
+  private boolean matchLexcialAnaphor(TagWord npTw, TagWord lexTw) {
     // Anaphor Binding Algorithm (Lappin and Leass)
     boolean judge = false;
-    DefaultMutableTreeNode npNode = npTw.getNPRepresentation()
+    DefaultMutableTreeNode npNode = npTw.getNP()
         .getNodeRepresent();
 
     if (lexTw.getArgumentHost() == npNode) {
@@ -805,10 +353,10 @@ public class AnaphoraResolver {
    * @param prpTw
    * @return true if the two NPs are possible to be co-reference
    */
-  private static boolean matchPronominalAnaphor(TagWord npTw, TagWord prpTw) {
+  private boolean matchPronominalAnaphor(TagWord npTw, TagWord prpTw) {
     // Syntactic Filter (Lappin and Leass)
     boolean judge = true;
-    DefaultMutableTreeNode npNode = npTw.getNPRepresentation()
+    DefaultMutableTreeNode npNode = npTw.getNP()
         .getNodeRepresent();
 
     if (prpTw.getArgumentHost() == npNode) {
@@ -848,8 +396,7 @@ public class AnaphoraResolver {
    * 
    * @return false if disagree.
    */
-  private static boolean morphologicalFilter(TagWord npTw, TagWord prpTw) {
-
+  private boolean morphologicalFilter(TagWord npTw, TagWord prpTw) {
     if (prpTw.getGender() != npTw.getGender()
         && prpTw.getGender() != Gender.UNCLEAR
         && npTw.getGender() != Gender.UNCLEAR) {
@@ -858,23 +405,25 @@ public class AnaphoraResolver {
         && npTw.getNumber() != Number.UNCLEAR
         && prpTw.getNumber() != Number.UNCLEAR) {
       return false;
-    } else if ((npTw.getPronounIdx() != prpTw.getPronounIdx())
-        && (npTw.getPronounIdx() * prpTw.getPronounIdx() != 0)) {
+    } else if (npTw.getPronounPeople() != prpTw.getPronounPeople()
+        && npTw.getPronounPeople() != People.UNCLEAR
+        && prpTw.getPronounPeople() != People.UNCLEAR) {
       // getPronounIdx also assigns the predicate "people" as well
       return false;
     } else if (npTw.getHuman() != prpTw.getHuman()
         && npTw.getHuman() != Human.UNCLEAR
         && prpTw.getHuman() != Human.UNCLEAR) {
       return false;
-    } else if ((npTw.getPeople() != prpTw.getPeople())
-        && (npTw.getPeople() * prpTw.getPeople() != 0)) {
+    } else if (npTw.getPeople() != prpTw.getPeople()
+        && npTw.getPeople() != People.UNCLEAR
+        && prpTw.getPeople() != People.UNCLEAR) {
       return false;
     } else {
       return true;
     }
   }
 
-  public static String processResult(TagWord np, TagWord referer) {
+  private String processResult(TagWord np, TagWord referer) {
     String refereeStr = null;
     String anaphorStr = null;
     if (np == null) {

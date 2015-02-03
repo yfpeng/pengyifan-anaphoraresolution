@@ -22,9 +22,6 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 package edu.nus.comp.nlp.tool.anaphoraresolution;
-
-import java.io.File;
-import java.util.Hashtable;
 import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -52,8 +49,7 @@ public class TagWord {
   private Number number = Number.UNCLEAR;
   private Gender gender = Gender.UNCLEAR;
   private Human human = Human.UNCLEAR;
-  private int people = 0;// o for unclear, 1 for first, 2 for second and 3 for
-                         // third
+  private People people = People.UNCLEAR;
   private boolean pleonastic = false; // represents a pleonastic pronoun
 
   private String tag;
@@ -72,7 +68,7 @@ public class TagWord {
   private DefaultMutableTreeNode determiner = null;
   private DefaultMutableTreeNode determinee = null;
   private List<DefaultMutableTreeNode> containHost = Lists.newArrayList();
-  private NP npRepresentation = null;
+  private NP np = null;
   private TagWord antecedent = null;
 
   // the dynamically updated salience value
@@ -124,8 +120,8 @@ public class TagWord {
     return sentenceIndex;
   }
 
-  public void setNP(NP n) {
-    this.npRepresentation = n;
+  public void setNP(NP np) {
+    this.np = np;
   }
 
   public void setNumber(Number number) {
@@ -136,8 +132,8 @@ public class TagWord {
     if (number != Number.UNCLEAR) {
       return number;
     }
-    if (npRepresentation.tagWord.size() == 1) {
-      String tag = npRepresentation.tagWord.get(0).getTag();
+    if (np.tagWord.size() == 1) {
+      String tag = np.tagWord.get(0).getTag();
       if (tag.endsWith("S")) { // NNS, NPS
         number = Number.PLURAL;
       } else if (HumanList.isPlural(getText())) {
@@ -145,7 +141,7 @@ public class TagWord {
       } else {
         number = Number.SINGLE;
       }
-    } else if (getNPRepresentation().hasAnd()) {
+    } else if (getNP().hasAnd()) {
       number = Number.PLURAL;
     } else if (this.head != null) {
       number = ((TagWord) head.getUserObject()).getNumber();
@@ -153,8 +149,8 @@ public class TagWord {
     return this.number;
   }
 
-  public NP getNPRepresentation() {
-    return this.npRepresentation;
+  public NP getNP() {
+    return this.np;
   }
 
   /**
@@ -180,29 +176,27 @@ public class TagWord {
     return gender;
   }
 
-  public int getPronounIdx() {
-
-    if (people != 0) {
+  public People getPronounPeople() {
+    if (people != People.UNCLEAR) {
       return people;
     }
     String h;
     if (head == null) {
       h = word; // for prp,
-    }
-    else {
-      TagWord tw = (TagWord) (head.getUserObject());
-      h = tw.getContent();
+    } else {
+      h = ((TagWord) head.getUserObject()).getContent();
     }
 
     if (HumanList.isThirdPerson(h)) {
-      return people = 3;
+      people = People.THIRD;
     } else if (HumanList.isSecondPerson(h)) {
-      return people = 2;
+      people = People.SECOND;
     } else if (HumanList.isFirstPerson(h)) {
-      return people = 1;
+      people = People.FIRST;
     } else {
-      return 0;
+      people = People.UNCLEAR;
     }
+    return people;
   }
 
   /**
@@ -246,25 +240,22 @@ public class TagWord {
     return human;
   }
 
-  public void setPeople(int i) {
-    people = i;
+  public void setPeople(People people) {
+    this.people = people;
   }
 
-  public int getPeople() {
-    if (people != 0) {
+  public People getPeople() {
+    if (people != People.UNCLEAR) {
       return people;
     }
-
     if (this.getContent().toLowerCase().matches("we|us")) {
-      return people = 1;
+      people = People.FIRST;
+    } else if (this.getContent().toLowerCase().matches("you")) {
+      people = People.SECOND;
+    } else {
+      people = People.THIRD; // default
     }
-
-    if (this.getContent().toLowerCase().matches("you")) {
-      return people = 2;
-    }
-
-    return people = 3; // default
-
+    return people;
   }
 
   public String getTag() {
@@ -272,7 +263,7 @@ public class TagWord {
   }
 
   public boolean isPRP() {
-    return this.getNPRepresentation().isPRP();
+    return this.getNP().isPRP();
   }
 
   public String getText() {
@@ -369,7 +360,7 @@ public class TagWord {
   public int getSalience(NP npAlien) {
 
     int sal = 0;
-    NP np = this.getNPRepresentation();
+    NP np = this.getNP();
     if ((np != null) && (npAlien != null)) {
       sal = np.getSalience(npAlien);
     }
@@ -379,7 +370,7 @@ public class TagWord {
 
     // penalize cataphora (if this appears after npAlien)
     if ((this.getSentenceIndex() == npAlien.getSentenceIdx()
-        && this.getNPRepresentation().getOffset() > npAlien.getOffset())
+        && this.getNP().getOffset() > npAlien.getOffset())
         || this.getSentenceIndex() > npAlien.getSentenceIdx()) {
       sal = sal / 4; // reduce the weight substantially
     }
@@ -392,13 +383,9 @@ public class TagWord {
   public boolean isHeadNP() {
     if (argumentHead != null) {
       return false;
-    }
-
-    if (adjunctHost != null) {
+    } else if (adjunctHost != null) {
       return false;
-    }
-
-    if (hasNPAncestor) {
+    } else if (hasNPAncestor) {
       return false;
     }
     isHeadNP = true;
@@ -425,8 +412,8 @@ public class TagWord {
     // In fact: accumulate salience factors in the chain, a member in the chain
     // has all the factors processed by the leading members
 
-    NP np = this.getNPRepresentation();
-    NP npGuest = tw.getNPRepresentation();
+    NP np = this.getNP();
+    NP npGuest = tw.getNP();
 
     if (np != null && npGuest != null) {
       np.mergeSalience(npGuest);
@@ -434,7 +421,7 @@ public class TagWord {
   }
 
   public int getSalience(TagWord tw) {
-    return getSalience(tw.getNPRepresentation());
+    return getSalience(tw.getNP());
   }
 
   public void setTmpSalience(int s) {
@@ -483,10 +470,6 @@ public class TagWord {
       text += tmp;
     }
     return text;
-  }
-
-  public String getSubstitutedContent() {
-    return this.getAntecedent().getContent();
   }
 
   public void setAntecedent(TagWord ant) {
@@ -564,7 +547,7 @@ public class TagWord {
     }
 
     String npShow;
-    NP np = this.getNPRepresentation();
+    NP np = this.getNP();
     if (np != null) {
       npShow = np.toString();
     }
@@ -594,166 +577,3 @@ public class TagWord {
 
 }
 
-class HumanList {
-
-  final static String[] maleList = new String("he him himself his").split(" ");
-  final static String[] femaleList = new String("she her herself").split(" ");
-  final static String[] thirdPersonList = new String(
-      "he him himself his she her herself they them their themselves it its itself")
-      .split(" ");
-  final static String[] secondPersonList = new String(
-      "you your yourself yourselves").split(" ");
-  final static String[] firstPersonList = new String(
-      "i me my myself we us our ourselves").split(" ");
-  final static String[] list = new String(
-      "i me myself my we us ourselves our they them themselves their")
-      .split(" ");
-  final static String[] pluralList = new String(
-      "we us ourselves our they them themselves their").split(" ");
-  final static String[] wholeList = new String(
-      "he him himself his she her herself"
-          + " i me myself my we us ourselves our you your yourself").split(" ");
-  final static String[] complementList = new String("it its itself").split(" ");
-  final static String[] auxZList = new String("is does has was").split(" ");
-  final static String[] titleList = new String("Mr. Mrs. Miss Ms.").split(" ");
-
-  final static int numberOfNameToCheck = -1; // 3000; //check only the first xx
-                                             // most common first names,
-                                             // respectively
-  // final static Hashtable maleNameTb =
-  // getNameTb(System.getProperty("dataPath") + File.separator
-  // +"male_first.txt",numberOfNameToCheck);
-  final static Hashtable<String, String> maleNameTb = getNameTb(
-      System.getProperty("dataPath")
-          + File.separator
-          + "MostCommonMaleFirstNamesInUS.mongabay.txt",
-      numberOfNameToCheck);
-  final static Hashtable<String, String> femaleNameTb = getNameTb(
-      System.getProperty("dataPath") + File.separator + "female_first.txt",
-      numberOfNameToCheck);
-  final static Hashtable<String, String> humanOccupationTb = getNameTb(System
-      .getProperty("dataPath") + File.separator + "personTitle.txt");
-  final static Hashtable<String, String> lastNameTb = getNameTb(System
-      .getProperty("dataPath") + File.separator + "name_last.txt");
-
-  public HumanList() {
-
-  }
-
-  public static boolean isMale(String wd) {
-    // People's name should start with a capital letter
-    return contains(maleList, wd)
-        || (wd.matches("[A-Z][a-z]*") && contains(maleNameTb, wd));
-  }
-
-  public static boolean isFemale(String wd) {
-    // People's name should start with a capital letter
-    return contains(femaleList, wd)
-        || (wd.matches("[A-Z][a-z]*") && contains(femaleNameTb, wd));
-  }
-
-  public static boolean isHuman(String wd) {
-    if (wd.indexOf(" ") > 0 && contains(titleList, wd.split(" ")[0], true)) {
-      // contains more than a single word and starts with a title
-      return true;
-    }
-    return contains(wholeList, wd)
-        // || contains((humanOccupationTb),wd)
-        || isMale(wd)
-        || isFemale(wd);
-  }
-
-  public static boolean isNotHuman(String wd) {
-    return contains(complementList, wd);
-  }
-
-  public static boolean isPlural(String wd) {
-    return contains(pluralList, wd);
-  }
-
-  public static boolean isThirdPerson(String wd) {
-    return contains(thirdPersonList, wd);
-  }
-
-  public static boolean isSecondPerson(String wd) {
-    return contains(secondPersonList, wd);
-  }
-
-  public static boolean isFirstPerson(String wd) {
-    return contains(firstPersonList, wd);
-  }
-
-  // public static boolean isHumanTitle(String wd){
-  // return contains(humanTitleTb,wd.toLowerCase());
-  // }
-
-  public static boolean contains(String[] list, String str) {
-    return contains(list, str, false);
-  }
-
-  public static boolean contains(String[] list, String str,
-      boolean caseSensitive) {
-    boolean contain = false;
-
-    if (caseSensitive) { // make this a outer check for efficiency's sake
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].equals(str)) {
-          contain = true;
-          break;
-        }
-      }
-    } else {
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].equalsIgnoreCase(str)) {
-          contain = true;
-          break;
-        }
-      }
-    }
-
-    return contain;
-  }
-
-  public static boolean contains(Hashtable<String, String> tb, String wd) {
-    return tb.containsKey(wd);
-  }
-
-  private static String[] retriveList(String listFile) {
-    return AnaphoraResolver.read(listFile).toString().split("\\s+");
-  }
-
-  private static Hashtable<String, String> getNameTb(String listFile) {
-    return getNameTb(listFile, -1);
-  }
-
-  private static Hashtable<String, String>
-      getNameTb(String listFile, int range) {
-    String[] nameArray = retriveList(listFile);
-    Hashtable<String, String> tb = new Hashtable<String, String>();
-
-    if (nameArray.length <= 0) {
-      System.err
-          .println(listFile
-              + " not found. Please download the latest data files. \n System quit.");
-      System.exit(0);
-    }
-
-    if (nameArray != null) {
-      int stopAt;
-      if (range == -1) {
-        stopAt = nameArray.length;
-      } else {
-        stopAt = Math.min(range, nameArray.length);
-      }
-      for (int i = 0; i < stopAt; i++) {
-        String name = nameArray[i].substring(0, 1);
-        if (nameArray[i].length() > 1) {
-          name += nameArray[i].substring(1).toLowerCase();
-        }
-        tb.put(name, name);
-      }
-    }
-    return tb;
-  }
-
-}

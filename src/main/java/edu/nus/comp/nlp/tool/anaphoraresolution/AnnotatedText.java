@@ -115,21 +115,12 @@ public class AnnotatedText {
         isPleonastic = false;
 
         NPnode = (DefaultMutableTreeNode) node.getParent();
-        if (NPnode == null) {
-          // never happens!
-          AnaphoraResolver.errLog("Weird: (PRP it) has no parent");
-          System.exit(0);
-        }
+        checkNotNull(NPnode, "Weird: (PRP it) has no parent");
 
         parentNode = (DefaultMutableTreeNode) NPnode.getParent();
-        if (parentNode == null) {
-          // never happens!
-          AnaphoraResolver.errLog("Weird: (PRP it) has no grandparent");
-          System.exit(0);
-        }
+        checkNotNull(parentNode, "Weird: (PRP it) has no grandparent");
 
         uncleNode = (DefaultMutableTreeNode) parentNode.getPreviousSibling();
-
         siblingNode = (DefaultMutableTreeNode) NPnode.getNextSibling();
         if ((siblingNode != null) && (siblingNode.getChildCount() > 0)) {
 
@@ -745,12 +736,12 @@ public class AnnotatedText {
     SNPList.add(sTW);
     while (iterator.hasNext()) {
       tw = (TagWord) iterator.next();
-      if (sTW.getNPRepresentation().contains(tw.getNPRepresentation())) {
+      if (sTW.getNP().contains(tw.getNP())) {
         continue;
       }
       else {
         sTW = tw;
-        if (sTW.getNPRepresentation().isPRP()) {
+        if (sTW.getNP().isPRP()) {
           // exclude PRP
           // continue;
         }
@@ -765,11 +756,149 @@ public class AnnotatedText {
 
   private void buildParseTree(List<String> sentences) {
     for (int i = 0; i < sentences.size(); i++) {
-      rootNode.add(AnaphoraResolver.convertSentenceToTreeNode(
+      rootNode.add(convertSentenceToTreeNode(
           i,
           sentences.get(i),
           "(",
           ")"));
+    }
+  }
+
+  /**
+   * Convert the output of Charniak parser for ~A single sentence~ into a
+   * TreeNode.
+   */
+  private DefaultMutableTreeNode convertSentenceToTreeNode(
+      int sentenceIndex, String annotedText, String delimL, String delimR) {
+    DefaultMutableTreeNode node = new DefaultMutableTreeNode();
+    int endPos = findMatcher(annotedText, delimL, delimR);
+
+    if (endPos == (annotedText.length() - 1)) {
+      node.setUserObject(TagWord.parseTagWord(annotedText, sentenceIndex, -1));
+      addChildren(sentenceIndex, node,
+          annotedText.substring(annotedText.indexOf(" ") + 1,
+              annotedText.length() - 1), delimL,
+          delimR);
+    }
+    else {
+      System.err.print("Parsing result error:\n" + annotedText + "\n");
+      System.err.print("Parsing result error:\n" + annotedText + "\n");
+      return convertSentenceToTreeNode(sentenceIndex,
+          "(S1 (FRAG (NP (CD XIE20030000.0000)) (. .)))", delimL, delimR);
+    }
+    computeOffset(node);
+    return node;
+  }
+
+  private int findMatcher(String target, String matcheeL, String matcherR) {
+    int loc = 0;
+    int depth = 0;
+    if (target.indexOf(matcheeL) == -1) {
+      return 0;
+    }
+
+    for (int i = 0; i < target.length(); i++) {
+      if (target.charAt(i) == matcheeL.charAt(0)) {
+        depth++;
+      }
+      else if (target.charAt(i) == matcherR.charAt(0)) {
+        depth--;
+      }
+      if (depth == 0) {
+        return i;
+      }
+    }
+    return loc;
+  }
+  
+  private void addChildren(int sIdx, DefaultMutableTreeNode parentNode,
+      String annotedText, String delimL, String delimR) {
+    int leadPos = annotedText.indexOf(delimL);
+
+    if (leadPos == -1) {
+      return;
+    }
+    int endPos = findMatcher(annotedText, delimL, delimR);
+    if (endPos == (annotedText.length() - 1)) {
+      DefaultMutableTreeNode singleChild = new DefaultMutableTreeNode(
+          TagWord.parseTagWord(annotedText, sIdx, -1));
+      if (!singleChild.toString().equalsIgnoreCase(parentNode.toString())) {
+        parentNode.add(singleChild);
+        if (annotedText.indexOf(delimL, 1) == -1) {
+          return;
+        }
+        addChildren(sIdx, singleChild,
+            annotedText.substring(annotedText.indexOf(delimL, 1),
+                annotedText.length() - 1), delimL,
+            delimR);
+      }
+      else {
+        if (annotedText.indexOf(delimL, 1) == -1) {
+          return;
+        }
+        addChildren(sIdx, parentNode,
+            annotedText.substring(annotedText.indexOf(delimL, 1),
+                annotedText.length() - 1), delimL,
+            delimR);
+      }
+
+      return;
+    }
+    while (endPos <= (annotedText.length() - 1)) {
+      DefaultMutableTreeNode aChild =
+          new DefaultMutableTreeNode(TagWord.parseTagWord(
+              annotedText.substring(leadPos,
+                  endPos + 1),
+              sIdx,
+              -1));
+      parentNode.add(aChild);
+
+      addChildren(sIdx, aChild, annotedText.substring(leadPos, endPos + 1),
+          delimL, delimR);
+      leadPos = annotedText.indexOf(delimL, endPos);
+      if (leadPos == -1) {
+        return;
+      }
+      endPos = findMatcher(annotedText.substring(annotedText.indexOf(delimL,
+          leadPos)), delimL, delimR);
+      endPos += annotedText.indexOf(delimL, leadPos);
+    }
+
+  }
+
+  private void computeOffset(DefaultMutableTreeNode n) {
+    String rootTag = null;
+
+    try {
+      rootTag = ((TagWord) n.getUserObject()).getTag();
+    } catch (Exception ex) {
+      System.out.println(n);
+      System.exit(0);
+    }
+
+    if (!rootTag.equalsIgnoreCase("S1")) {
+      // shouldn't assign offset to none-sentence
+      System.err.println("//shouldn't assign offset to none-sentence");
+      return;
+    }
+    int offset = 0; // syntatic unit index, zero based
+    @SuppressWarnings("rawtypes")
+    Enumeration enumeration = n.postorderEnumeration();
+    while (enumeration.hasMoreElements()) {
+      DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) enumeration
+          .
+          nextElement();
+      if (currentNode.isLeaf()) {
+        TagWord tw = (TagWord) currentNode.getUserObject();
+        tw.setWordIndex(offset++);
+      }
+      else {
+        TagWord tw = (TagWord) currentNode.getUserObject();
+        TagWord firstChildtw = (TagWord) (((DefaultMutableTreeNode)
+            currentNode.getFirstChild()).
+                getUserObject());
+        tw.setWordIndex(firstChildtw.getWordIndex());
+      }
     }
   }
 

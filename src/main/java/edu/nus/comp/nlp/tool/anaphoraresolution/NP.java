@@ -65,7 +65,7 @@ class NP {
     tagWord.addAll(AnaphoraResolver.analyseTagWordPairs(annotatedNP, sIdx));
     setSlots();
   }
-
+  
   public void setSubject(boolean b) {
     this.subject = b;
   }
