@@ -69,7 +69,7 @@ public class AnnotatedText {
       String sentence = sentenceList[i];
       if (!sentence.trim().isEmpty()) {
         sents.add("(S1 " + sentence.trim());
-        globalList.add(AnaphoraResolver.analyseTagWordPairs(sentence, i));
+        globalList.add(Utils.analyseTagWordPairs(sentence, i));
       }
     }
   }

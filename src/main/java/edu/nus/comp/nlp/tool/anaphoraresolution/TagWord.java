@@ -22,7 +22,9 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 package edu.nus.comp.nlp.tool.anaphoraresolution;
+
 import java.util.List;
+import java.util.Objects;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -83,6 +85,49 @@ public class TagWord {
 
   public String getWord() {
     return this.word;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (!(obj instanceof TagWord)) {
+      return false;
+    }
+    TagWord rhs = (TagWord) obj;
+    return Objects.equals(word, rhs.word)
+        && Objects.equals(tag, rhs.tag)
+        && Objects.equals(sentenceIndex, rhs.sentenceIndex)
+        && Objects.equals(wordIndex, rhs.wordIndex)
+        && Objects.equals(number, rhs.number)
+        && Objects.equals(gender, rhs.gender)
+        && Objects.equals(human, rhs.human)
+        && Objects.equals(people, rhs.people)
+        && Objects.equals(pleonastic, rhs.pleonastic)
+        && Objects.equals(isHeadNP, rhs.isHeadNP)
+        && Objects.equals(hasNPAncestor, rhs.hasNPAncestor)
+        && Objects.equals(head, rhs.head)
+        && Objects.equals(np, rhs.np)
+        && Objects.equals(antecedent, rhs.antecedent)
+        ;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        word,
+        tag,
+        sentenceIndex,
+        wordIndex,
+        number,
+        gender,
+        human,
+        people,
+        pleonastic,
+        isHeadNP,
+        hasNPAncestor,
+        head);
   }
 
   /***
@@ -576,4 +621,3 @@ public class TagWord {
   }
 
 }
-

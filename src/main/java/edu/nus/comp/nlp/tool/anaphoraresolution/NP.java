@@ -62,7 +62,7 @@ class NP {
   NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
-    tagWord.addAll(AnaphoraResolver.analyseTagWordPairs(annotatedNP, sIdx));
+    tagWord.addAll(Utils.analyseTagWordPairs(annotatedNP, sIdx));
     setSlots();
   }
   

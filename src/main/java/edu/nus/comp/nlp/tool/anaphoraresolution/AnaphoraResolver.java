@@ -88,43 +88,6 @@ public class AnaphoraResolver {
   // }
   // }
 
-  public static List<TagWord> analyseTagWordPairs(String aNP, int sIdx) {
-    int pointer = 0; // to indicate position in the string
-    int adjPointer = 0; // adjunct pointer
-    String tag = null;
-    String word;
-    if (aNP.length() == 0) {
-      return Collections.emptyList();
-    }
-
-    List<TagWord> vec = Lists.newArrayList();
-    while (pointer >= 0) {
-      pointer = aNP.indexOf("(", pointer);
-      if (pointer == -1) {
-        break;
-      }
-
-      adjPointer = aNP.indexOf(" ", pointer);
-
-      if (adjPointer < 0) {
-        break;
-      }
-      tag = aNP.substring(pointer + 1, adjPointer);
-
-      // testing if it's (TAG word)
-      if (aNP.startsWith("(", adjPointer + 1)) {
-        pointer = adjPointer;
-        continue;
-      }
-
-      word = aNP.substring(adjPointer, pointer = aNP.indexOf(")", adjPointer));
-      // vec.add(new TagWord(tag,word,sIdx,offset++));
-      vec.add(new TagWord(tag, word, sIdx, adjPointer));
-    }
-
-    return vec;
-  }
-
   public List<CorreferencialPair> resolverV1(List<TagWord> aNPList,
       List<TagWord> aPRPList) {
     // to display
