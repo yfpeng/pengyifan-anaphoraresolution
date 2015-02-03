@@ -34,6 +34,6 @@ public class CorreferencialPair {
   }
 
   public String toString() {
-    return Util.processResult(referee, referer);
+    return AnaphoraResolver.processResult(referee, referer);
   }
 }

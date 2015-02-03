@@ -5,7 +5,7 @@ import java.util.Vector;
 import edu.nus.comp.nlp.tool.anaphoraresolution.AnnotatedText;
 import edu.nus.comp.nlp.tool.anaphoraresolution.CorreferencialPair;
 import edu.nus.comp.nlp.tool.anaphoraresolution.TagWord;
-import edu.nus.comp.nlp.tool.anaphoraresolution.Util;
+import edu.nus.comp.nlp.tool.anaphoraresolution.AnaphoraResolver;
 
 public class RAPClient {
 
@@ -14,7 +14,8 @@ public class RAPClient {
     String parseText = "(S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) (S (NP (NN katX)) (VP (VBZ is) (ADVP (RB also)) (NP (DT a) (JJ sigmaB-dependent) (JJ general) (NN stress) (NN gene)) (, ,) (SBAR (IN since) (S (NP (PRP it)) (VP (VBZ is) (ADVP (RB strongly)) (VP (VBN induced) (PP (PP (IN by) (NP (NP (NN heat)) (, ,) (NP (NN salt)) (CC and) (NP (NN ethanol) (NN stress)))) (, ,) (CONJP (RB as) (RB well) (IN as)) (PP (IN by) (NP (NN energy) (NN depletion))))))))))))) (. .)))";
 
     AnnotatedText aText = new AnnotatedText(parseText.toString());
-    Vector<CorreferencialPair> vet = Util.resolverV1(
+    AnaphoraResolver u = new AnaphoraResolver();
+    Vector<CorreferencialPair> vet = u.resolverV1(
         aText.getNPList(),
         aText.getPRPList());
 

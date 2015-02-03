@@ -70,7 +70,7 @@ public class AnnotatedText {
         if (sentence.trim().length() > 0) {
           sents.add(sIdx, "(S1 " + sentence.trim());
           GlobalList
-              .add(Util.analyseTagWordPairs(
+              .add(AnaphoraResolver.analyseTagWordPairs(
                   sentence,
                   new Vector<TagWord>(),
                   sIdx));
@@ -127,14 +127,14 @@ public class AnnotatedText {
         NPnode = (DefaultMutableTreeNode) node.getParent();
         if (NPnode == null) {
           // never happens!
-          Util.errLog("Weird: (PRP it) has no parent");
+          AnaphoraResolver.errLog("Weird: (PRP it) has no parent");
           System.exit(0);
         }
 
         parentNode = (DefaultMutableTreeNode) NPnode.getParent();
         if (parentNode == null) {
           // never happens!
-          Util.errLog("Weird: (PRP it) has no grandparent");
+          AnaphoraResolver.errLog("Weird: (PRP it) has no grandparent");
           System.exit(0);
         }
 
@@ -779,7 +779,7 @@ public class AnnotatedText {
     for (int i = 0; i < sents.size(); i++) {
       String aTaggedSentence = (String) sents.get(i);
       rootNode
-          .add(Util.convertSentenceToTreeNode(i, aTaggedSentence, "(", ")"));
+          .add(AnaphoraResolver.convertSentenceToTreeNode(i, aTaggedSentence, "(", ")"));
     }
   }
 

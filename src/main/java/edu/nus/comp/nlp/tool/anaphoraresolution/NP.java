@@ -71,7 +71,7 @@ class NP {
   NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
-    Util.analyseTagWordPairs(annotatedNP, tagWord, sIdx);
+    AnaphoraResolver.analyseTagWordPairs(annotatedNP, tagWord, sIdx);
     setSlots();
   }
 
@@ -194,9 +194,7 @@ class NP {
   }
 
   public boolean isHuman() {
-    // used in only baseline
     return true;
-    // return HumanList.contains(((TagWord)tagWord.lastElement()).word);
   }
 
   public boolean isIt() {

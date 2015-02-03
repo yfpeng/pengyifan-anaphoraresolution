@@ -30,6 +30,8 @@ import java.util.regex.*;
 
 import javax.swing.tree.*;
 
+import com.google.common.io.Files;
+
 // import edu.nus.comp.nlp.gadget.*;
 /**
  * @author Qiu Long
@@ -38,13 +40,41 @@ import javax.swing.tree.*;
  * @author "Yifan Peng"
  */
 
-public class Util {
+public class AnaphoraResolver {
 
-  static {
-    Env env = new Env();
+  public AnaphoraResolver() {
+    loadEnv();
   }
+  
+  private void loadEnv() {
+    // resolver mode
+    System.setProperty("referenceChain", "true");
+    System.setProperty("mode", "TagPresent");
+    System.setProperty("keep log", "false");
+    System.setProperty("display log", "true");
+    System.setProperty("EvaluationVerbose", "false");
+    // Results will be shown as a part of log, if log is displayed. So set this
+    // to true only if log is dampened.
+    System.setProperty("display resolving results", "false");
+    System.setProperty("Substitution", "true");
+    System.setProperty("display substitution results", "false");
+    System.setProperty("write substitution results", "false");
+    System.setProperty("write resolving results", "false");
 
-  public Util() {
+    // environment
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    // global
+    String dataPath = classLoader.getResource("Data").getFile();
+    System.setProperty("dataPath", dataPath);
+
+    // working directory
+    File outputDir = Files.createTempDir();
+    System.setProperty("outputDir", outputDir.toString());
+
+    File tmpDir = Files.createTempDir();
+    System.setProperty("tmpDir", tmpDir.toString());
+
+    System.setProperty("parserOption", " ");
   }
 
   /**
@@ -293,11 +323,11 @@ public class Util {
     }
     else {
       System.err.print("Parsing result error:\n" + annotedText + "\n");
-      Util.errLog("Parsing result error:\n" + annotedText + "\n");
+      AnaphoraResolver.errLog("Parsing result error:\n" + annotedText + "\n");
       return convertSentenceToTreeNode(sIdx,
           "(S1 (FRAG (NP (CD XIE20030000.0000)) (. .)))", delimL, delimR);
     }
-    Util.computeOffset(node);
+    AnaphoraResolver.computeOffset(node);
     return node;
   }
 
@@ -365,7 +395,7 @@ public class Util {
 
     if (!rootTag.equalsIgnoreCase("S1")) {
       // shouldn't assign offset to none-sentence
-      Util.errLog("//shouldn't assign offset to none-sentence");
+      AnaphoraResolver.errLog("//shouldn't assign offset to none-sentence");
       return;
     }
     int offset = 0; // syntatic unit index, zero based
@@ -390,9 +420,9 @@ public class Util {
   }
 
   public static void splitFile(String fileName, String delim) {
-    String[] segS = Util.read(fileName).toString().split(delim);
+    String[] segS = AnaphoraResolver.read(fileName).toString().split(delim);
     for (int i = 0; i < segS.length; i++) {
-      Util.write(fileName + "." + i, segS[i] + delim);
+      AnaphoraResolver.write(fileName + "." + i, segS[i] + delim);
     }
   }
 
@@ -526,7 +556,7 @@ public class Util {
     }
   }
 
-  public static Vector<CorreferencialPair> resolverV1(Vector<TagWord> aNPList,
+  public Vector<CorreferencialPair> resolverV1(Vector<TagWord> aNPList,
       Vector<TagWord> aPRPList) {
     Vector<String> results = new Vector<String>(); // to display
     Vector<CorreferencialPair> resultsOut = new Vector<CorreferencialPair>(); // for
@@ -704,12 +734,12 @@ public class Util {
           + File.separator
           +
           "resolvingresults.txt";
-      Util.write(resultsFileName, toWrite); // remove enclosing brackets
-      Util.errLog("Resolving Results written to file " + resultsFileName);
+      AnaphoraResolver.write(resultsFileName, toWrite); // remove enclosing brackets
+      AnaphoraResolver.errLog("Resolving Results written to file " + resultsFileName);
     }
-    Util.errLog("***********Head of Results**************\n" + toWrite +
+    AnaphoraResolver.errLog("***********Head of Results**************\n" + toWrite +
         "\n***********End of Results***************\n");
-    Util.showMessage(
+    AnaphoraResolver.showMessage(
         "********Anaphor-antecedent pairs*****\n" + toWrite + "\n",
         System.getProperty("display resolving results").equals(
             "true"));
@@ -1086,15 +1116,15 @@ public class Util {
         "Charniak.out";
     try {
       // write the sent to a tmpfile
-      Util.write(tmpIn, "<s> " + sent + " </s>");
+      AnaphoraResolver.write(tmpIn, "<s> " + sent + " </s>");
       // parse it and store it in another tmpfile
-      Util.parse(System.getProperty("parserHomeDir") + File.separator +
+      AnaphoraResolver.parse(System.getProperty("parserHomeDir") + File.separator +
           "parseIt",
           System.getProperty("parserHomeDir") + File.separator + "DATA/",
           tmpIn,
           tmpOut);
       // retrive the parse result
-      output = Util.read(tmpOut).toString();
+      output = AnaphoraResolver.read(tmpOut).toString();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -1114,9 +1144,9 @@ public class Util {
     else {
       try {
         // write the sent to a tmpfile
-        Util.write(tmpIn, sent);
+        AnaphoraResolver.write(tmpIn, sent);
         // parse it and store it in another tmpfile
-        Util.parse(System.getProperty("parserHomeDir") + File.separator +
+        AnaphoraResolver.parse(System.getProperty("parserHomeDir") + File.separator +
             "parseIt",
             System.getProperty("parserHomeDir") + File.separator +
                 "DATA/",
@@ -1124,7 +1154,7 @@ public class Util {
             tmpOut);
         // retrive the parse result
 
-        output = Util.read(tmpOut).toString();
+        output = AnaphoraResolver.read(tmpOut).toString();
       } catch (Exception ex) {
         ex.printStackTrace();
       }

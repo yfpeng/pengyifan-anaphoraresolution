@@ -738,7 +738,7 @@ class HumanList {
   }
 
   private static String[] retriveList(String listFile) {
-    return Util.read(listFile).toString().split("\\s+");
+    return AnaphoraResolver.read(listFile).toString().split("\\s+");
   }
 
   private static Hashtable<String, String> getNameTb(String listFile) {
