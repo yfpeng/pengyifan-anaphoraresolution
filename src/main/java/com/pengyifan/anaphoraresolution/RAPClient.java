@@ -20,19 +20,7 @@ public class RAPClient {
         aText.getPRPList());
 
     for (CorreferencialPair p : vet) {
-      TagWord referer = p.getReferer();
-      TagWord referee = p.getReferee();
-
-      if (referee == null || referer == null) {
-        continue;
-      }
-
-      // T0 Entity 21 25 katX
-      // T1 Entity 80 82 it
-      // R0 Coreference Referer:T1 Referee:T0
-
-      System.out.println(referee.getWordIndex() + "<--" + referer.getWordIndex());
-      System.out.println(referee.getContent() + "<--" + referer.getContent());
+      System.out.println(p);
     }
   }
 }

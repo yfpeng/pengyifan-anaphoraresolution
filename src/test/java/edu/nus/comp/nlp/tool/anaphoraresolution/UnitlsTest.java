@@ -17,7 +17,7 @@ public class UnitlsTest {
 
   @Test
   public void test_analyseTagWordPairs() {
-    List<TagWord> list = Utils.analyseTagWordPairs(LINE, SEN_INDEX);
+    List<TagWord> list = Utils.parseTagWordPairs(LINE, SEN_INDEX);
     assertEquals(4, list.size());
     assertEquals(W1, list.get(0));
     assertEquals(W2, list.get(1));

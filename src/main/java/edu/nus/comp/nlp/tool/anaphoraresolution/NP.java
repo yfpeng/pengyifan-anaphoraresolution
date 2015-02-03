@@ -42,11 +42,12 @@ class NP {
   private boolean isHead = false;
   private boolean isInADVP = false;
   // Indicates whether this NP is part of a "NNX (NNX)+" combination
-  // The probability of such a NP being a good antecedent of an anaphor plumbs.
+  // The probability of such a NP being a good antecedent of an anaphora
+  // plumbs.
   private boolean hasNNXsibling = false;
   // index of the sentence where UNIT is localized. 0 based
   private int sentIdx;
-  // distance between the beinning of the sentence and the first word in UNIT;
+  // distance between the beginning of the sentence and the first word in UNIT;
   private int offset;
 
   private DefaultMutableTreeNode nodeRepresent = null;
@@ -62,10 +63,10 @@ class NP {
   NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
-    tagWord.addAll(Utils.analyseTagWordPairs(annotatedNP, sIdx));
+    tagWord.addAll(Utils.parseTagWordPairs(annotatedNP, sIdx));
     setSlots();
   }
-  
+
   public void setSubject(boolean b) {
     this.subject = b;
   }
@@ -234,12 +235,12 @@ class NP {
    * @param palNP
    */
   void mergeSalience(NP palNP) {
-    subject = subject || palNP.subject;
-    existential = existential || palNP.existential;
-    directObj = directObj || palNP.directObj;
-    indirectObj = indirectObj || palNP.indirectObj;
-    isHead = isHead || palNP.isHead;
-    isInADVP = isInADVP || palNP.isInADVP;
+    subject |= palNP.subject;
+    existential |= palNP.existential;
+    directObj |= palNP.directObj;
+    indirectObj |= palNP.indirectObj;
+    isHead |= palNP.isHead;
+    isInADVP |= palNP.isInADVP;
   }
 
   private int getFixedSalience() {

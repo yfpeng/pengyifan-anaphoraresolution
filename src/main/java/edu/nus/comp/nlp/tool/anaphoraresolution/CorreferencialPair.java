@@ -1,17 +1,23 @@
 package edu.nus.comp.nlp.tool.anaphoraresolution;
+
 /**
- * 
+ * @version 1.0
  * @author "Yifan Peng"
  *
  */
 public class CorreferencialPair {
 
-  TagWord referee;
-  TagWord referer;
+  private final TagWord referee;
+  private final TagWord referer;
 
   public CorreferencialPair(TagWord tw0, TagWord tw1) {
     referee = tw0;
     referer = tw1;
+    if (referee != null) {
+      // update salience factors for the detected coreferential pair
+      referee.mergeSalience(referer);
+      referer.mergeSalience(referee);
+    }
   }
 
   public TagWord getReferer() {
@@ -24,7 +30,6 @@ public class CorreferencialPair {
 
   public String toString() {
     String refereeStr = null;
-    String anaphorStr = null;
     if (referee == null) {
       refereeStr = "NULL";
     } else {
@@ -35,11 +40,8 @@ public class CorreferencialPair {
         // bind to the earliest NP
         refereeStr = referee.getAntecedent().toStringBrief();
       }
-      // update salience factors for the detected coreferential pair
-      referee.mergeSalience(referer);
-      referer.mergeSalience(referee);
     }
-    anaphorStr = ((TagWord) referer).toStringBrief();
-    return refereeStr + " <-- " + anaphorStr;
+    String refererStr = referer.toStringBrief();
+    return refereeStr + " <-- " + refererStr;
   }
 }

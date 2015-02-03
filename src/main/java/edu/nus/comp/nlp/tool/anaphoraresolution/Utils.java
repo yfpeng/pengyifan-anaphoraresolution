@@ -21,7 +21,7 @@ public abstract class Utils {
    * @param sentenceIndex
    * @return
    */
-  public static List<TagWord> analyseTagWordPairs(String s, int sentenceIndex) {
+  static List<TagWord> parseTagWordPairs(String s, int sentenceIndex) {
     if (s.isEmpty()) {
       return Collections.emptyList();
     }

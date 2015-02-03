@@ -45,6 +45,10 @@ import com.google.common.io.Files;
 
 public class AnaphoraResolver {
 
+  private static final int THRESHHOLD = 30;
+  // How many sentences to look back.
+  private static final int SCOPE = 1;
+
   public AnaphoraResolver() {
     loadEnv();
   }
@@ -80,39 +84,16 @@ public class AnaphoraResolver {
     System.setProperty("parserOption", " ");
   }
 
-  // private void write(String fileName, String content) {
-  // try {
-  // FileUtils.write(new File(fileName), content);
-  // } catch (IOException e) {
-  // e.printStackTrace();
-  // }
-  // }
-
   public List<CorreferencialPair> resolverV1(List<TagWord> aNPList,
       List<TagWord> aPRPList) {
-    // to display
-    List<String> results = Lists.newArrayList();
     // for substitution
-    List<CorreferencialPair> resultsOut = Lists.newArrayList();
-    // How many sentences to look back. /****para****/
-    int scope = 1;
-    int threshhold = 30;
-    TagWordSalienceComp twComp = new TagWordSalienceComp();
+    List<CorreferencialPair> results = Lists.newArrayList();
 
-    Iterator<TagWord> npIterator = aNPList.iterator();
-    Iterator<TagWord> prpIterator = aPRPList.iterator();
-    boolean foundMatcher = false;
-
-    while (prpIterator.hasNext()) {
-      foundMatcher = false;
-
-      TagWord prpTw = (TagWord) prpIterator.next();
+    for (TagWord prpTw : aPRPList) {
 
       // label pleonastic pronoun's anaphoraic antecedence as NULL and procede
       if (prpTw.isPleonastic()) {
-        TagWord obj = null;
-        results.add(processResult(obj, prpTw));
-        resultsOut.add(new CorreferencialPair(obj, prpTw));
+        results.add(new CorreferencialPair(null, prpTw));
         continue;
       }
 
@@ -121,40 +102,24 @@ public class AnaphoraResolver {
         continue;
       }
 
+      boolean foundMatcher = false;
       // rewind
-      npIterator = aNPList.iterator();
       List<TagWord> npCandidates = Lists.newArrayList();
-      while (npIterator.hasNext()) {
-        TagWord npTw = (TagWord) npIterator.next();
+      for (TagWord npTw : aNPList) {
         // skip pleonastic NP, whose only child is pleonastic pronoun 'it'
         if (npTw.isPleonastic()) {
           continue;
         }
-
-        if ((npTw.getSentenceIndex() + scope) < prpTw.getSentenceIndex()) {
-          // ignore NP 'scope' sentences ahead
+        // ignore NP 'scope' sentences ahead
+        if ((npTw.getSentenceIndex() + SCOPE) < prpTw.getSentenceIndex()) {
           continue;
         }
-
-        boolean b1 = prpTw == npTw;
-        boolean b2 = npTw.getNP().getNodeRepresent().isNodeChild(
-            prpTw.getNP().getNodeRepresent());
-        boolean b3 = npTw.getNP().getNodeRepresent().
-            getChildCount() == 1;
-        boolean b4 = (npTw.getNP().getNodeRepresent().
-            isNodeDescendant(prpTw.getNP().
-                getNodeRepresent()));
-        boolean b5 = b1 || (b2 && b3) || b4;
-
-        if (b5) {
-          // self reference :)
-          // Case 1: (PRP$ xxx) (PRP$ xxx)
-          // Case 2: (NP (PRP xxx)) (PRP xxx)
+        // self reference :)
+        if (isSelfReference(prpTw, npTw)) {
           continue;
         }
-
+        // only consider anaphora
         if (npTw.getSentenceIndex() > prpTw.getSentenceIndex()) {
-          // only consider anaphora
           break;
         }
 
@@ -176,45 +141,32 @@ public class AnaphoraResolver {
               }
             }
 
-            results.add(processResult(npTw, prpTw));
-
             // true/undefine by default
             if (System.getProperty("referenceChain").equals("false")) {
-              resultsOut.add(new CorreferencialPair(npTw, prpTw));
+              results.add(new CorreferencialPair(npTw, prpTw));
+            } else {
+              results.add(new CorreferencialPair(npTw.getAntecedent(), prpTw));
             }
-            else {
-              resultsOut
-                  .add(new CorreferencialPair(npTw.getAntecedent(), prpTw));
-            }
-
             break;
           }
-        }
-        else {
-          if (!matchPronominalAnaphor(npTw, prpTw)) {
-            continue;
-          }
+        } else if (!matchPronominalAnaphor(npTw, prpTw)) {
+          continue;
         }
 
         // grading
-        if (npTw.getSalience(prpNP) < threshhold) {
-          // ignore those with small salience weight
+        // ignore those with small salience weight
+        if (npTw.getSalience(prpNP) < THRESHHOLD) {
           continue;
         }
         npTw.setTmpSalience(npTw.getSalience(prpNP));
         npCandidates.add(npTw);
-
       }
 
       if (!foundMatcher) {
         TagWord[] sortedCandidates = npCandidates.toArray(new TagWord[0]);
-        Arrays.sort(sortedCandidates, twComp);
-
-        // result
+        Arrays.sort(sortedCandidates, new TagWordSalienceComp());
 
         TagWord obj = getBestCandidate(sortedCandidates, prpTw);
-        results.add(processResult(obj, prpTw));
-
         if (obj != null) {
           NP prpNP = prpTw.getNP();
           DefaultMutableTreeNode prpNode = prpNP.getNodeRepresent();
@@ -224,58 +176,61 @@ public class AnaphoraResolver {
             DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) prpNode
                 .getParent();
             if (parentNode != null) {
-              ((TagWord) parentNode.getUserObject()).setAntecedent((TagWord)
-                  obj);
+              ((TagWord) parentNode.getUserObject()).setAntecedent(obj);
             }
           }
           // true/undefine by default
           if (System.getProperty("referenceChain").equals("false")) {
-            resultsOut.add(new CorreferencialPair((TagWord) obj, prpTw));
+            results.add(new CorreferencialPair(obj, prpTw));
           } else {
-            resultsOut.add(new CorreferencialPair(obj.getAntecedent(), prpTw));
+            results.add(new CorreferencialPair(obj.getAntecedent(), prpTw));
           }
         } else {
           // no candidate is found
-          resultsOut.add(new CorreferencialPair(obj, prpTw));
+          results.add(new CorreferencialPair(obj, prpTw));
         }
       }
 
     }
-    return resultsOut;
+    return results;
   }
 
-  private TagWord
-      getBestCandidate(TagWord[] sortedCandidates, TagWord tw) {
-    TagWord obj = null;
+  // self reference :)
+  // Case 1: (PRP$ xxx) (PRP$ xxx)
+  // Case 2: (NP (PRP xxx)) (PRP xxx)
+  private boolean isSelfReference(TagWord prpTw, TagWord npTw) {
+    boolean b1 = prpTw == npTw;
+    boolean b2 = npTw.getNP().getNodeRepresent().isNodeChild(
+        prpTw.getNP().getNodeRepresent());
+    boolean b3 = npTw.getNP().getNodeRepresent().
+        getChildCount() == 1;
+    boolean b4 = (npTw.getNP().getNodeRepresent().
+        isNodeDescendant(prpTw.getNP().
+            getNodeRepresent()));
+    return b1 || (b2 && b3) || b4;
+  }
 
-    // Check for empty candidate list
+  private TagWord getBestCandidate(TagWord[] sortedCandidates, TagWord tw) {
     if (sortedCandidates.length == 0) {
-      return obj;
+      return null;
     } else if (sortedCandidates.length == 1) {
       return sortedCandidates[0];
-    } else { // with more in the list
-      TagWord tw0 = (TagWord) sortedCandidates[sortedCandidates.length - 1];
-      TagWord tw1 = (TagWord) sortedCandidates[sortedCandidates.length - 2];
-      if (tw0.getTmpSalience() > tw1.getTmpSalience()) {
-        return tw0;
-      }
-      else {
-        if (tw0.distanceInText(tw) < tw1.distanceInText(tw)) {
-          // take closer one
-          obj = tw0;
-        }
-        else if (tw0.getNP().getNodeRepresent().isNodeAncestor(
-            tw1.getNP().getNodeRepresent())) {
-          // take child
-          obj = tw0;
-        }
-        else {
-          obj = tw1;
-        }
-
-      }
     }
-    return obj;
+
+    TagWord tw0 = sortedCandidates[sortedCandidates.length - 1];
+    TagWord tw1 = sortedCandidates[sortedCandidates.length - 2];
+    if (tw0.getTmpSalience() > tw1.getTmpSalience()) {
+      return tw0;
+    } else if (tw0.distanceInText(tw) < tw1.distanceInText(tw)) {
+      // take closer one
+      return tw0;
+    } else if (tw0.getNP().getNodeRepresent().isNodeAncestor(
+        tw1.getNP().getNodeRepresent())) {
+      // take child
+      return tw0;
+    } else {
+      return tw1;
+    }
   }
 
   /**
@@ -286,29 +241,22 @@ public class AnaphoraResolver {
    */
   private boolean matchLexcialAnaphor(TagWord npTw, TagWord lexTw) {
     // Anaphor Binding Algorithm (Lappin and Leass)
-    boolean judge = false;
     DefaultMutableTreeNode npNode = npTw.getNP()
         .getNodeRepresent();
-
+    // lexical anaphor is in the argument domain of N
     if (lexTw.getArgumentHost() == npNode) {
-      // lexical anaphor is in the argument domain of N
       return true;
-    }
-    else if (lexTw.getAdjunctHost() == npNode) {
+    } else if (lexTw.getAdjunctHost() == npNode) {
       // lexcial anaphor is in the adjunct domain of N
       return true;
-    }
-    else if (lexTw.getNPDomainHost() == npNode) {
+    } else if (lexTw.getNPDomainHost() == npNode) {
       // lexcial anaphor is in the NP domain of N
       return true;
-    }
-    else if (morphologicalFilter(npTw, lexTw) == false) {
+    } else if (morphologicalFilter(npTw, lexTw) == false) {
+      return false;
+    } else {
       return false;
     }
-    /**
-     * @todo : 4,5 code is not working. Removed form this release
-     * */
-    return judge;
   }
 
   /**
@@ -318,39 +266,34 @@ public class AnaphoraResolver {
    */
   private boolean matchPronominalAnaphor(TagWord npTw, TagWord prpTw) {
     // Syntactic Filter (Lappin and Leass)
-    boolean judge = true;
     DefaultMutableTreeNode npNode = npTw.getNP()
         .getNodeRepresent();
 
     if (prpTw.getArgumentHost() == npNode) {
       // 2.pronominal anaphor is in the argument domain of N
       return false;
-    }
-    else if (prpTw.getAdjunctHost() == npNode) {
+    } else if (prpTw.getAdjunctHost() == npNode) {
       // 3.pronominal anaphor is in the adjunct domain of N
       return false;
-    }
-    else if (prpTw.getNPDomainHost() == npNode) {
+    } else if (prpTw.getNPDomainHost() == npNode) {
       // 5. pronominal anaphor is in the NP domain of N
       return false;
-    }
-    else if (npTw.getContainHost().contains(prpTw.getArgumentHead())) {
+    } else if (npTw.getContainHost().contains(prpTw.getArgumentHead())) {
       // 4.
       if (!npTw.isPRP()) {
         return false;
+      } else {
+        return true;
       }
-    }
-    else if (npTw.getContainHost().contains(prpTw.getDeterminee())) {
+    } else if (npTw.getContainHost().contains(prpTw.getDeterminee())) {
       // 6.
       return false;
-    }
-    else if (morphologicalFilter(npTw, prpTw) == false) {
+    } else if (morphologicalFilter(npTw, prpTw) == false) {
       // 1
       return false;
+    } else {
+      return true;
     }
-
-    // Todo: improve 1,6
-    return judge;
   }
 
   /**
@@ -384,26 +327,5 @@ public class AnaphoraResolver {
     } else {
       return true;
     }
-  }
-
-  private String processResult(TagWord np, TagWord referer) {
-    String refereeStr = null;
-    String anaphorStr = null;
-    if (np == null) {
-      refereeStr = "NULL";
-    } else {
-      // true/undefined by default
-      if (System.getProperty("referenceChain").equals("false")) {
-        refereeStr = np.toStringBrief();
-      } else {
-        // bind to the earliest NP
-        refereeStr = np.getAntecedent().toStringBrief();
-      }
-      // update salience factors for the detected coreferential pair
-      np.mergeSalience(referer);
-      referer.mergeSalience(np);
-    }
-    anaphorStr = ((TagWord) referer).toStringBrief();
-    return "\n" + refereeStr + " <-- " + anaphorStr;
   }
 }
