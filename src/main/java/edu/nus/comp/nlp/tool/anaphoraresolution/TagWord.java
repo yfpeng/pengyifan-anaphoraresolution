@@ -21,14 +21,15 @@
  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
-import javax.swing.tree.*;
-import java.util.Vector;
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.File;
+import java.util.Hashtable;
+import java.util.List;
+
+import javax.swing.tree.DefaultMutableTreeNode;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Qiu Long
@@ -46,18 +47,17 @@ import java.util.regex.*;
 
 public class TagWord {
 
-  private int depth = 0; // depth in the parse tree;
-  int sIdx; // indicates sentence
-  private int offset; // offset of the word as a whole in the sentence
-  private int number = 1; // 0:single, 1:unclear, 2:plural
-  private int gender = 1; // 0 for Male, 2 for Female and 1 for unclear
-  private int human = 1; // 0 for human, 2 for none-human 1 for unclear
+  private int sentenceIndex; // indicates sentence
+  private int wordIndex;
+  private Number number = Number.UNCLEAR;
+  private Gender gender = Gender.UNCLEAR;
+  private Human human = Human.UNCLEAR;
   private int people = 0;// o for unclear, 1 for first, 2 for second and 3 for
                          // third
   private boolean pleonastic = false; // represents a pleonastic pronoun
 
-  String tag;
-  String word;
+  private String tag;
+  private String word;
   private boolean isHeadNP = false;
   private boolean hasNPAncestor = false;
   private DefaultMutableTreeNode head = null; // reference to the head for this
@@ -71,115 +71,86 @@ public class TagWord {
   private DefaultMutableTreeNode NPDomainHost = null;
   private DefaultMutableTreeNode determiner = null;
   private DefaultMutableTreeNode determinee = null;
-  private Vector<DefaultMutableTreeNode> containHost = new Vector<DefaultMutableTreeNode>();
+  private List<DefaultMutableTreeNode> containHost = Lists.newArrayList();
   private NP npRepresentation = null;
   private TagWord antecedent = null;
 
   // the dynamically updated salience value
   int tmpSalience = 0;
 
-  public TagWord(String tag, String word, int s, int offset) {
+  public TagWord(String tag, String word, int sentenceIndex, int wordIndex) {
     this.tag = tag;
     this.word = word;
-    this.sIdx = s;
-    this.offset = offset;
+    this.sentenceIndex = sentenceIndex;
+    this.wordIndex = wordIndex;
   }
 
-  public TagWord(String record) {
-    // record is in the format of
-    // (sentenceIdx,offset) word
-    Pattern p = Pattern.compile("\\((\\d+),(\\d+)\\)(.+)");
-    Matcher m = null;
-    m = p.matcher(record);
-    if (m.find()) {
-      String sentIdxStr = m.group(1);
-      String offsetStr = m.group(2);
-      String content = m.group(3);
-      this.tag = "UNKNOWN";
-      this.word = content.trim();
-      this.sIdx = Integer.parseInt(sentIdxStr);
-      this.offset = Integer.parseInt(offsetStr);
-    }
-    else {
-      System.err.println("Format error in: \"" + record + "\"");
-    }
-
+  public String getWord() {
+    return this.word;
   }
 
   /***
-   * combinedStr : (Tag content), where content could be also a combinedStr
+   * s: (Tag content), where content could be also a combinedStr
    */
-  public TagWord(String combinedStr, int s, int offset) {
-    this.sIdx = s;
-    this.offset = offset;
+  public static TagWord parseTagWord(String s, int sentenceIndex,
+      int wordIndex) {
+    String tag = null;
+    String word = null;
     try {
-      this.tag = combinedStr.substring(combinedStr.indexOf("(") + 1,
-          combinedStr.indexOf(" "));
-      this.word = combinedStr.substring(combinedStr.indexOf(" ") + 1,
-          combinedStr.lastIndexOf(")"));
+      tag = s.substring(s.indexOf("(") + 1, s.indexOf(" "));
+      word = s.substring(s.indexOf(" ") + 1, s.lastIndexOf(")"));
     } catch (Exception ex) {
-      combinedStr = "(-LRB- -LRB-)";// dummy element
-      this.tag = combinedStr.substring(combinedStr.indexOf("(") + 1,
-          combinedStr.indexOf(" "));
-      this.word = combinedStr.substring(combinedStr.indexOf(" ") + 1,
-          combinedStr.lastIndexOf(")"));
+      s = "(-LRB- -LRB-)";// dummy element
+      tag = s.substring(s.indexOf("(") + 1, s.indexOf(" "));
+      word = s.substring(s.indexOf(" ") + 1, s.lastIndexOf(")"));
     }
+    return new TagWord(tag, word, sentenceIndex, wordIndex);
   }
 
-  public void setOffset(int offset) {
-    this.offset = offset;
+  public void setWordIndex(int wordIndex) {
+    this.wordIndex = wordIndex;
   }
 
-  public int getOffset() {
-    return this.offset;
+  /**
+   * Returns index of the word as a whole in the sentence
+   * 
+   * @return index of the word as a whole in the sentence
+   */
+  public int getWordIndex() {
+    return wordIndex;
   }
 
-  public int getSentenceIdx() {
-    return this.sIdx;
+  public int getSentenceIndex() {
+    return sentenceIndex;
   }
 
   public void setNP(NP n) {
     this.npRepresentation = n;
   }
 
-  public void setNumber(int n) {
-    // 0:single, 1:unclear, 2:plural
-    // refer to getNumber
-    this.number = n;
+  public void setNumber(Number number) {
+    this.number = number;
   }
 
-  public int getNumber() {
-    if (this.number != 1) {
-      return this.number;
+  public Number getNumber() {
+    if (number != Number.UNCLEAR) {
+      return number;
     }
-    String tag = "";
-    if (this.npRepresentation.tagWord.size() == 1) {
-      tag = ((TagWord) this.npRepresentation.tagWord.firstElement()).getTag();
+    if (npRepresentation.tagWord.size() == 1) {
+      String tag = npRepresentation.tagWord.get(0).getTag();
       if (tag.endsWith("S")) { // NNS, NPS
-        this.number = 2;
+        number = Number.PLURAL;
       } else if (HumanList.isPlural(getText())) {
-        this.number = 2;
+        number = Number.PLURAL;
+      } else {
+        number = Number.SINGLE;
       }
-      else {
-        this.number = 0;
-      }
-    }
-    else {
-      if (getNPRepresentation().hasAnd()) {
-        this.number = 2;
-      } else if (this.head != null) {
-        this.number = ((TagWord) head.getUserObject()).getNumber();
-      }
+    } else if (getNPRepresentation().hasAnd()) {
+      number = Number.PLURAL;
+    } else if (this.head != null) {
+      number = ((TagWord) head.getUserObject()).getNumber();
     }
     return this.number;
-  }
-
-  public void setDepth(int d) {
-    this.depth = d;
-  }
-
-  public int getDepth() {
-    return this.depth;
   }
 
   public NP getNPRepresentation() {
@@ -189,24 +160,22 @@ public class TagWord {
   /**
    * @return 0 for Male, 2 for Female and 1 for unclear
    */
-  public int getGender() {
-    if (this.gender != 1) {
-      return this.gender;
+  public Gender getGender() {
+    if (gender != Gender.UNCLEAR) {
+      return gender;
     }
     String h;
     if (head == null) {
       h = word; // for prp
-    }
-    else {
-      TagWord tw = (TagWord) (head.getUserObject());
+    } else {
+      TagWord tw = (TagWord) head.getUserObject();
       h = tw.getContent();
     }
 
     if (HumanList.isMale(h)) {
-      this.gender = 0;
-    } else // Added on Feb 08, 2011
-    if (HumanList.isFemale(h)) {
-      this.gender = 2;
+      this.gender = Gender.MALE;
+    } else if (HumanList.isFemale(h)) {
+      this.gender = Gender.FEMALE;
     }
     return gender;
   }
@@ -240,34 +209,38 @@ public class TagWord {
    *
    * @return 0 for human, 2 for none-human and 1 for unclear
    */
-  public int getHumanIdx() {
-    if (human != 1) {
+  public Human getHuman() {
+    if (human != Human.UNCLEAR) {
       return human;
     }
 
-    if (gender != 1) {
-      human = 0;
+    if (gender != Gender.UNCLEAR) {
+      human = Human.HUMAN;
       return human;
     }
 
-    String h;
     // check the content of this NP as the first attempt
-    h = getContent();
+    String h = getContent();
     if (HumanList.isHuman(h)) {
-      human = 0;
+      human = Human.HUMAN;
+      return human;
+    } else if (HumanList.isNotHuman(h)) {
+      human = Human.NON_HUMAN;
+      return human;
+    }
+
+    if (head == null) {
       return human;
     }
 
     // If above fails, check the head of this NP
-    if (head != null) {
-      TagWord tw = (TagWord) (head.getUserObject());
-      h = tw.getContent();
-    }
+    h = ((TagWord) head.getUserObject()).getContent();
     if (HumanList.isHuman(h)) {
-      this.human = 0;
+      human = Human.HUMAN;
+      return human;
     } else if (HumanList.isNotHuman(h)) {
-      /**** para ****/
-      this.human = 2;
+      human = Human.NON_HUMAN;
+      return human;
     }
 
     return human;
@@ -307,7 +280,7 @@ public class TagWord {
   }
 
   public void setHead(DefaultMutableTreeNode n) {
-    if (this.number != 1) {
+    if (this.number != Number.UNCLEAR) {
       // number should be set afterword
       System.err.println("Number shouldn't be set before setHead.");
     }
@@ -373,11 +346,11 @@ public class TagWord {
     this.containHost.add(n);
   }
 
-  public void setContainHost(Vector<DefaultMutableTreeNode> n) {
+  public void setContainHost(List<DefaultMutableTreeNode> n) {
     this.containHost.addAll(n);
   }
 
-  public java.util.Vector<DefaultMutableTreeNode> getContainHost() {
+  public java.util.List<DefaultMutableTreeNode> getContainHost() {
     return this.containHost;
   }
 
@@ -402,12 +375,12 @@ public class TagWord {
     }
     // dampen the salience as distance increases
     sal = sal
-        / (Math.abs(this.getSentenceIdx() - npAlien.getSentenceIdx()) + 1);
+        / (Math.abs(this.getSentenceIndex() - npAlien.getSentenceIdx()) + 1);
 
     // penalize cataphora (if this appears after npAlien)
-    if ((this.getSentenceIdx() == npAlien.getSentenceIdx()
+    if ((this.getSentenceIndex() == npAlien.getSentenceIdx()
         && this.getNPRepresentation().getOffset() > npAlien.getOffset())
-        || this.getSentenceIdx() > npAlien.getSentenceIdx()) {
+        || this.getSentenceIndex() > npAlien.getSentenceIdx()) {
       sal = sal / 4; // reduce the weight substantially
     }
     return sal;
@@ -476,8 +449,8 @@ public class TagWord {
    * amplify sentence index difference by multiply 100
    */
   public int distanceInText(TagWord tw) {
-    return Math.abs(this.getSentenceIdx() - tw.getSentenceIdx()) * 100
-        + Math.abs(this.getOffset() - tw.getOffset());
+    return Math.abs(this.getSentenceIndex() - tw.getSentenceIndex()) * 100
+        + Math.abs(this.getWordIndex() - tw.getWordIndex());
   }
 
   public String getContent() {
@@ -537,7 +510,7 @@ public class TagWord {
   }
 
   public String toStringBrief() {
-    return "(" + sIdx + "," + offset + ") " + getContent();
+    return "(" + sentenceIndex + "," + wordIndex + ") " + getContent();
   }
 
   public String toString() {
@@ -599,15 +572,23 @@ public class TagWord {
       npShow = "no NP";
     }
 
-    return offset + " in " + sIdx + "         " + tag + " " + getContent()
-        + " <NUMBER> " + this.number
+    return wordIndex
+        + " in "
+        + sentenceIndex
+        + "         "
+        + tag
+        + " "
+        + getContent()
+        + " <NUMBER> "
+        + this.number
         + localhead
         + argHStr
         + argHeadStr
         + adjHStr
         + NPDHStr
         + containHostStr
-        + "\t " + npShow;
+        + "\t "
+        + npShow;
 
   }
 
@@ -745,8 +726,7 @@ class HumanList {
     return getNameTb(listFile, -1);
   }
 
-  private static
-      Hashtable<String, String>
+  private static Hashtable<String, String>
       getNameTb(String listFile, int range) {
     String[] nameArray = retriveList(listFile);
     Hashtable<String, String> tb = new Hashtable<String, String>();

@@ -30,6 +30,7 @@ import java.util.regex.*;
 
 import javax.swing.tree.*;
 
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 // import edu.nus.comp.nlp.gadget.*;
@@ -45,7 +46,7 @@ public class AnaphoraResolver {
   public AnaphoraResolver() {
     loadEnv();
   }
-  
+
   private void loadEnv() {
     // resolver mode
     System.setProperty("referenceChain", "true");
@@ -245,16 +246,16 @@ public class AnaphoraResolver {
     write(fileName, content, false);
   }
 
-  public static Vector<TagWord> analyseTagWordPairs(String aNP,
-      Vector<TagWord> vec, int sIdx) {
+  public static List<TagWord> analyseTagWordPairs(String aNP, int sIdx) {
     int pointer = 0; // to indicate position in the string
     int adjPointer = 0; // adjunct pointer
     String tag = null;
     String word;
     if (aNP.length() == 0) {
-      return vec;
+      return Collections.emptyList();
     }
 
+    List<TagWord> vec = Lists.newArrayList();
     while (pointer >= 0) {
       pointer = aNP.indexOf("(", pointer);
       if (pointer == -1) {
@@ -282,8 +283,7 @@ public class AnaphoraResolver {
     return vec;
   }
 
-  public static
-      int
+  public static int
       findMatcher(String target, String matcheeL, String matcherR) {
     int loc = 0;
     int depth = 0;
@@ -308,15 +308,15 @@ public class AnaphoraResolver {
   /**
    * Convert the output of Charniak parser for ~A single sentence~ into a
    * TreeNode.
-   * */
-  static public DefaultMutableTreeNode convertSentenceToTreeNode(int sIdx,
-      String annotedText, String delimL, String delimR) {
+   */
+  static public DefaultMutableTreeNode convertSentenceToTreeNode(
+      int sentenceIndex, String annotedText, String delimL, String delimR) {
     DefaultMutableTreeNode node = new DefaultMutableTreeNode();
     int endPos = findMatcher(annotedText, delimL, delimR);
 
     if (endPos == (annotedText.length() - 1)) {
-      node.setUserObject(new TagWord(annotedText, sIdx, -1));
-      addChildren(sIdx, node,
+      node.setUserObject(TagWord.parseTagWord(annotedText, sentenceIndex, -1));
+      addChildren(sentenceIndex, node,
           annotedText.substring(annotedText.indexOf(" ") + 1,
               annotedText.length() - 1), delimL,
           delimR);
@@ -324,7 +324,7 @@ public class AnaphoraResolver {
     else {
       System.err.print("Parsing result error:\n" + annotedText + "\n");
       AnaphoraResolver.errLog("Parsing result error:\n" + annotedText + "\n");
-      return convertSentenceToTreeNode(sIdx,
+      return convertSentenceToTreeNode(sentenceIndex,
           "(S1 (FRAG (NP (CD XIE20030000.0000)) (. .)))", delimL, delimR);
     }
     AnaphoraResolver.computeOffset(node);
@@ -340,8 +340,8 @@ public class AnaphoraResolver {
     }
     int endPos = findMatcher(annotedText, delimL, delimR);
     if (endPos == (annotedText.length() - 1)) {
-      DefaultMutableTreeNode singleChild = new DefaultMutableTreeNode(new
-          TagWord(annotedText, sIdx, -1));
+      DefaultMutableTreeNode singleChild = new DefaultMutableTreeNode(
+          TagWord.parseTagWord(annotedText, sIdx, -1));
       if (!singleChild.toString().equalsIgnoreCase(parentNode.toString())) {
         parentNode.add(singleChild);
         if (annotedText.indexOf(delimL, 1) == -1) {
@@ -366,8 +366,11 @@ public class AnaphoraResolver {
     }
     while (endPos <= (annotedText.length() - 1)) {
       DefaultMutableTreeNode aChild =
-          new DefaultMutableTreeNode(new TagWord(annotedText.substring(leadPos,
-              endPos + 1), sIdx, -1));
+          new DefaultMutableTreeNode(TagWord.parseTagWord(
+              annotedText.substring(leadPos,
+                  endPos + 1),
+              sIdx,
+              -1));
       parentNode.add(aChild);
 
       addChildren(sIdx, aChild, annotedText.substring(leadPos, endPos + 1),
@@ -407,14 +410,14 @@ public class AnaphoraResolver {
           nextElement();
       if (currentNode.isLeaf()) {
         TagWord tw = (TagWord) currentNode.getUserObject();
-        tw.setOffset(offset++);
+        tw.setWordIndex(offset++);
       }
       else {
         TagWord tw = (TagWord) currentNode.getUserObject();
         TagWord firstChildtw = (TagWord) (((DefaultMutableTreeNode)
             currentNode.getFirstChild()).
                 getUserObject());
-        tw.setOffset(firstChildtw.getOffset());
+        tw.setWordIndex(firstChildtw.getWordIndex());
       }
     }
   }
@@ -468,28 +471,13 @@ public class AnaphoraResolver {
 
     try {
       if (!new java.io.File(dataDir).exists()) {
-        // can't find the parserDate dir
-
-        // java.net.InetAddress a=java.net.InetAddress.getLocalHost();
-        // String str = a.getHostName();
-        // System.err.println(str);
-
         System.err.println(
             "Can't initialize the parser properly. Please check the path: " +
                 command + " " + dataDir);
         System.exit(-1);
       }
 
-      // Old code, only works on unix
-      // String[] cmd = {
-      // "/bin/sh",
-      // "-c",
-      // "ulimit -s unlimited;" + command + " " +
-      // System.getProperty("parserOption") + dataDir + " " + inputFile +
-      // " > " + outputFile};
-
       Process proc = null;
-
       if (System.getProperty("os.name").startsWith("Windows")) {
         String[] cmd = {
             "cmd",
@@ -527,7 +515,7 @@ public class AnaphoraResolver {
     return output;
   }
 
-  public static void resolverBaseline(Vector<TagWord> aNPList) {
+  public static void resolverBaseline(List<TagWord> aNPList) {
     Iterator<TagWord> iterator = aNPList.iterator();
     NP np = new NP(0, 0);
     Stack<NP> NPStack = new Stack<NP>();
@@ -541,13 +529,13 @@ public class AnaphoraResolver {
           NP inStack = (NP) NPStack.pop();
           if (inStack.isHuman() == np.isHuman()) {
             matched = true;
-            System.err.println(inStack.toDisplay() + "<--->" + np.toDisplay());
+            System.err.println(inStack + "<--->" + np);
             NPStack.clear();
             break;
           }
         }
         if (!matched) {
-          System.err.println("NULL" + "<--->" + np.toDisplay());
+          System.err.println("NULL" + "<--->" + np);
         }
       }
       else {
@@ -556,12 +544,14 @@ public class AnaphoraResolver {
     }
   }
 
-  public Vector<CorreferencialPair> resolverV1(Vector<TagWord> aNPList,
-      Vector<TagWord> aPRPList) {
-    Vector<String> results = new Vector<String>(); // to display
-    Vector<CorreferencialPair> resultsOut = new Vector<CorreferencialPair>(); // for
-                                                                              // substitution
-    int scope = 1; // How many sentences to look back. /****para****/
+  public List<CorreferencialPair> resolverV1(List<TagWord> aNPList,
+      List<TagWord> aPRPList) {
+    // to display
+    List<String> results = Lists.newArrayList();
+    // for substitution
+    List<CorreferencialPair> resultsOut = Lists.newArrayList();
+    // How many sentences to look back. /****para****/
+    int scope = 1;
     int threshhold = 30;
     TagWordSalienceComp twComp = new TagWordSalienceComp();
 
@@ -587,8 +577,9 @@ public class AnaphoraResolver {
         continue;
       }
 
-      npIterator = aNPList.iterator(); // rewind
-      Vector<TagWord> npCandidates = new Vector<TagWord>();
+      // rewind
+      npIterator = aNPList.iterator();
+      List<TagWord> npCandidates = Lists.newArrayList();
       while (npIterator.hasNext()) {
         TagWord npTw = (TagWord) npIterator.next();
         // skip pleonastic NP, whose only child is pleonastic pronoun 'it'
@@ -596,7 +587,7 @@ public class AnaphoraResolver {
           continue;
         }
 
-        if ((npTw.getSentenceIdx() + scope) < prpTw.getSentenceIdx()) {
+        if ((npTw.getSentenceIndex() + scope) < prpTw.getSentenceIndex()) {
           // ignore NP 'scope' sentences ahead
           continue;
         }
@@ -618,13 +609,10 @@ public class AnaphoraResolver {
           continue;
         }
 
-        if (npTw.getSentenceIdx() > prpTw.getSentenceIdx()) {
+        if (npTw.getSentenceIndex() > prpTw.getSentenceIndex()) {
           // only consider anaphora
           break;
         }
-
-        // System.out.println("A     "+prpTw);
-        // System.out.println("      "+npTw);
 
         // filtering
         NP prpNP = prpTw.getNPRepresentation();
@@ -645,9 +633,9 @@ public class AnaphoraResolver {
             }
 
             results.add(processResult(npTw, prpTw));
-            if (System.getProperty("referenceChain").equals("false")) { // true/undefine
-                                                                        // by
-                                                                        // default
+
+            // true/undefine by default
+            if (System.getProperty("referenceChain").equals("false")) {
               resultsOut.add(new CorreferencialPair(npTw, prpTw));
             }
             else {
@@ -696,10 +684,8 @@ public class AnaphoraResolver {
                   obj);
             }
           }
-
-          if (System.getProperty("referenceChain").equals("false")) { // true/undefine
-                                                                      // by
-                                                                      // default
+          // true/undefine by default
+          if (System.getProperty("referenceChain").equals("false")) {
             resultsOut.add(new CorreferencialPair((TagWord) obj, prpTw));
           }
           else {
@@ -724,20 +710,21 @@ public class AnaphoraResolver {
     else {
       toWrite = "null";
     }
-
+    // make use of shortcut
     if (System.getProperty("write resolving results") == null ||
-        System.getProperty("write resolving results").equals("true")) { // make
-                                                                        // use
-                                                                        // of
-                                                                        // shortcut
+        System.getProperty("write resolving results").equals("true")) {
       String resultsFileName = System.getProperty("outputDir")
           + File.separator
           +
           "resolvingresults.txt";
-      AnaphoraResolver.write(resultsFileName, toWrite); // remove enclosing brackets
-      AnaphoraResolver.errLog("Resolving Results written to file " + resultsFileName);
+      // remove enclosing brackets
+      AnaphoraResolver.write(resultsFileName, toWrite);
+      AnaphoraResolver.errLog("Resolving Results written to file "
+          + resultsFileName);
     }
-    AnaphoraResolver.errLog("***********Head of Results**************\n" + toWrite +
+    AnaphoraResolver.errLog("***********Head of Results**************\n"
+        + toWrite
+        +
         "\n***********End of Results***************\n");
     AnaphoraResolver.showMessage(
         "********Anaphor-antecedent pairs*****\n" + toWrite + "\n",
@@ -746,33 +733,22 @@ public class AnaphoraResolver {
     return resultsOut;
   }
 
-  private static
-      TagWord
+  private static TagWord
       getBestCandidate(TagWord[] sortedCandidates, TagWord tw) {
     TagWord obj = null;
 
     // Check for empty candidate list
     if (sortedCandidates.length == 0) {
       return obj;
-    }
-    else if (sortedCandidates.length == 1) {
+    } else if (sortedCandidates.length == 1) {
       return sortedCandidates[0];
-    }
-    else { // with more in the list
+    } else { // with more in the list
       TagWord tw0 = (TagWord) sortedCandidates[sortedCandidates.length - 1];
       TagWord tw1 = (TagWord) sortedCandidates[sortedCandidates.length - 2];
       if (tw0.getTmpSalience() > tw1.getTmpSalience()) {
         return tw0;
       }
       else {
-        // if(tw0.distanceInText(tw) <= tw1.distanceInText(tw)){
-        /*
-         * if(Math.abs(tw0.getDepth() - tw.getDepth()) <
-         * Math.abs(tw1.getDepth() - tw.getDepth()) ){ //closer depth obj =
-         * tw0; }else if(tw0.distanceInText(tw) <= tw1.distanceInText(tw)){ obj
-         * = tw0; }else{ obj = tw1; }
-         */
-
         if (tw0.distanceInText(tw) < tw1.distanceInText(tw)) {
           // take closer one
           obj = tw0;
@@ -874,374 +850,48 @@ public class AnaphoraResolver {
    */
   private static boolean morphologicalFilter(TagWord npTw, TagWord prpTw) {
 
-    if (Math.abs(prpTw.getGender() - npTw.getGender()) > 1) {
+    if (prpTw.getGender() != npTw.getGender()
+        && prpTw.getGender() != Gender.UNCLEAR
+        && npTw.getGender() != Gender.UNCLEAR) {
       return false;
-    }
-    else if (Math.abs(npTw.getNumber() - prpTw.getNumber()) > 1) {
-      /**** para ****/
+    } else if (npTw.getNumber() != prpTw.getNumber()
+        && npTw.getNumber() != Number.UNCLEAR
+        && prpTw.getNumber() != Number.UNCLEAR) {
       return false;
-    }
-    else if ((npTw.getPronounIdx() != prpTw.getPronounIdx())
+    } else if ((npTw.getPronounIdx() != prpTw.getPronounIdx())
         && (npTw.getPronounIdx() * prpTw.getPronounIdx() != 0)) {
       // getPronounIdx also assigns the predicate "people" as well
       return false;
-    }
-    else if (Math.abs(npTw.getHumanIdx() - prpTw.getHumanIdx()) > 1) {
+    } else if (npTw.getHuman() != prpTw.getHuman()
+        && npTw.getHuman() != Human.UNCLEAR
+        && prpTw.getHuman() != Human.UNCLEAR) {
       return false;
-    }
-    else if ((npTw.getPeople() != prpTw.getPeople())
+    } else if ((npTw.getPeople() != prpTw.getPeople())
         && (npTw.getPeople() * prpTw.getPeople() != 0)) {
       return false;
-    }
-    else {
+    } else {
       return true;
     }
   }
 
-  static String processResult(TagWord np, TagWord referer) {
+  public static String processResult(TagWord np, TagWord referer) {
     String refereeStr = null;
     String anaphorStr = null;
     if (np == null) {
       refereeStr = "NULL";
-      /*
-       * }else if(
-       * ((TagWord)np).getAntecedent().getNPRepresentation().getNodeRepresent
-       * ().isNodeChild(
-       * ((TagWord)referer).getNPRepresentation().getNodeRepresent()) ){ //self
-       * refering refereeStr = "NULL"; //Todo: Util.java processResult()
-       * //April 29, 2004: In //
-       * "But they have 200 % of the (high-end) market they want, which is not bad"
-       * //One "they" is regarded as another "they"'s child, which is to be
-       * looked at.
-       */
-    }
-    else {
-      if (System.getProperty("referenceChain").equals("false")) { // true/undefine
-                                                                  // by default
+    } else {
+      // true/undefined by default
+      if (System.getProperty("referenceChain").equals("false")) {
         refereeStr = np.toStringBrief();
+      } else {
+        // bind to the earliest NP
+        refereeStr = np.getAntecedent().toStringBrief();
       }
-      else {
-        refereeStr = np.getAntecedent().toStringBrief(); // Bind to the
-                                                         // earliest
-                                                         // NP****para****
-      }
-      // update salience factors for the detected coreferencial pair
+      // update salience factors for the detected coreferential pair
       np.mergeSalience(referer);
       referer.mergeSalience(np);
     }
     anaphorStr = ((TagWord) referer).toStringBrief();
     return "\n" + refereeStr + " <-- " + anaphorStr;
   }
-
-  static public String substitutionV0(DefaultMutableTreeNode root,
-      Vector result) {
-    // Build sentArray
-
-    String aSentStr;
-    @SuppressWarnings("rawtypes")
-    Enumeration sentences = root.children();
-    StringBuffer[] sentArray = new StringBuffer[root.getChildCount()];
-    int i = 0;
-    while (sentences.hasMoreElements()) {
-      aSentStr = ((TagWord) ((DefaultMutableTreeNode) sentences.nextElement()).
-          getUserObject()).getContent();
-      sentArray[i++] = new StringBuffer(aSentStr);
-    }
-
-    // substitution
-    Iterator iterator = result.iterator();
-
-    while (iterator.hasNext()) {
-      CorreferencialPair cp = (CorreferencialPair) iterator.next();
-      if (cp.referee == null) {
-        continue;
-      }
-      int refererSIdx = cp.referer.getSentenceIdx();
-      int leng = cp.referer.getContent().length();
-      aSentStr = sentArray[refererSIdx].toString();
-      // Locate the beginning position of the referer in the possiblly altered
-      // sentence.
-      int begin = findOffset(aSentStr, cp.referer.getOffset());
-      sentArray[refererSIdx].replace(begin
-          , begin + leng
-          ,
-          "<" + cp.referee.getSubstitutedContent() + ">");
-    }
-
-    String substitutedOutput = " ";
-    for (i = 0; i < sentArray.length; i++) {
-      substitutedOutput += sentArray[i].toString() + "\n";
-    }
-    return substitutedOutput;
-  }
-
-  public static boolean arrayMatch(String[] strArr1, String[] strArr2) {
-    int l1 = strArr1.length;
-    int l2 = strArr2.length;
-    String str1 = "";
-    String str2 = "";
-
-    for (int i = 0; i < l1; i++) {
-      str1 += strArr1[i];
-    }
-    for (int i = 0; i < l2; i++) {
-      str2 += strArr2[i];
-    }
-
-    if ((float) Math.max(l1, l2) / (float) (Math.min(l1, l2)) > 1.3) {
-      if (Math.min(l1, l2) < 4) {
-        if (str1.indexOf(str2) == 0 || str2.indexOf(str1) == 0) {
-          // same beginning
-          return true;
-        }
-        return false;
-      }
-    }
-
-    return str1.indexOf(str2) >= 0 || str2.indexOf(str1) >= 0;
-  }
-
-  static public String substitution(DefaultMutableTreeNode root, Vector result,
-      String sent) {
-    boolean partialSubstitution = false;
-    int sentID = -1;
-    if (sent != null) {
-      partialSubstitution = true;
-    }
-    // Build sentArray
-    String aSentStr;
-    @SuppressWarnings("rawtypes")
-    Enumeration sentences = root.children();
-    String[][] sentArray = new String[root.getChildCount()][];
-    int i = 0;
-    while (sentences.hasMoreElements()) {
-      aSentStr = ((TagWord) ((DefaultMutableTreeNode) sentences.nextElement()).
-          getUserObject()).getContent();
-      if (partialSubstitution) {
-        String spli = "[^a-zA-Z]+";
-        if ((sentID == -1)
-            && arrayMatch(aSentStr.split(spli), sent.split(spli))) {
-          sentID = i;
-        }
-      }
-      sentArray[i++] = (aSentStr).toString().split(" ");
-    }
-
-    // substitution
-    Iterator iterator = result.iterator();
-
-    while (iterator.hasNext()) {
-
-      CorreferencialPair cp = (CorreferencialPair) iterator.next();
-
-      if (cp.referee == null) {
-        continue;
-      }
-
-      // ignore those referencial cycle ( A<--B<--C<--A )
-      if (cp.referee.toStringBrief().equals(cp.referer.toStringBrief())) {
-        continue;
-      }
-
-      int refererSIdx = cp.referer.getSentenceIdx();
-
-      String str = cp.referee.getSubstitutedContent();
-      if (cp.referer.getTag().equalsIgnoreCase("PRP$")) {
-        if (cp.referer.getNumber() == 2) {
-          str += "'";
-        }
-        else {
-          str += "'s";
-        }
-      }
-
-      try {
-        if (System.getProperty("mode").equals("TagPresent")) {
-          sentArray[refererSIdx][cp.referer.getOffset()] = "<" + str + ">";
-        }
-        else {
-          sentArray[refererSIdx][cp.referer.getOffset()] = str;
-        }
-      } catch (Exception ex) {
-        ex.printStackTrace();
-        System.exit(0);
-      }
-
-    }
-
-    String substitutedOutput = " ";
-
-    if (partialSubstitution) {
-      if (sentID != -1) {
-        for (int j = 0; j < sentArray[sentID].length; j++) {
-          substitutedOutput += sentArray[sentID][j].toString() + " ";
-        }
-
-      }
-      else {
-        substitutedOutput = "**********sentence not found";
-      }
-    }
-    else {
-      for (i = 0; i < sentArray.length; i++) {
-        for (int j = 0; j < sentArray[i].length; j++) {
-          String item = sentArray[i][j].toString();
-          if (item.equals(",")
-              || item.equals(";")
-              || item.equals(".")
-              || item.equals("!")
-              || item.equals("?")
-              || item.equals(")")) {
-            substitutedOutput = substitutedOutput.trim();
-          }
-          if (substitutedOutput.endsWith("( ")) {
-            substitutedOutput = substitutedOutput.trim();
-          }
-
-          substitutedOutput += item + " ";
-
-        }
-        substitutedOutput += "\n";
-      }
-    }
-
-    return substitutedOutput;
-  }
-
-  static public String parseSingleSentnce(String sent) {
-    String output = null;
-    String tmpIn = System.getProperty("tmpDir") + File.separator +
-        "Charniak.in";
-    String tmpOut = System.getProperty("tmpDir") + File.separator +
-        "Charniak.out";
-    try {
-      // write the sent to a tmpfile
-      AnaphoraResolver.write(tmpIn, "<s> " + sent + " </s>");
-      // parse it and store it in another tmpfile
-      AnaphoraResolver.parse(System.getProperty("parserHomeDir") + File.separator +
-          "parseIt",
-          System.getProperty("parserHomeDir") + File.separator + "DATA/",
-          tmpIn,
-          tmpOut);
-      // retrive the parse result
-      output = AnaphoraResolver.read(tmpOut).toString();
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-    return output;
-  }
-
-  static public String parseSingleArticle(String sent, boolean delimited) {
-    String output = null;
-    String tmpIn = System.getProperty("tmpDir") + File.separator +
-        "Charniak.in";
-    String tmpOut = System.getProperty("tmpDir") + File.separator +
-        sent.substring(4, 20);
-    if (!delimited) {
-      // split the sentences first
-
-    }
-    else {
-      try {
-        // write the sent to a tmpfile
-        AnaphoraResolver.write(tmpIn, sent);
-        // parse it and store it in another tmpfile
-        AnaphoraResolver.parse(System.getProperty("parserHomeDir") + File.separator +
-            "parseIt",
-            System.getProperty("parserHomeDir") + File.separator +
-                "DATA/",
-            tmpIn,
-            tmpOut);
-        // retrive the parse result
-
-        output = AnaphoraResolver.read(tmpOut).toString();
-      } catch (Exception ex) {
-        ex.printStackTrace();
-      }
-    }
-    return output;
-  }
-
-  static public String substitutionV1(DefaultMutableTreeNode root,
-      Vector result) {
-    return substitution(root, result, null);
-  }
-
-  /**
-   * * @param root
-   * 
-   * @param result
-   * @param sent
-   * @return The sentence after substitution.
-   */
-  static public String substitutionSent(DefaultMutableTreeNode root,
-      Vector result, String sent) {
-    return substitution(root, result, sent);
-  }
-
-  /**
-   *
-   * @param offset word index inside a sentence
-   * @return char index of the word's first char inside the sentence
-   */
-  static private int findOffset(String str, int offset) {
-    int i = 0;
-    int loc = -1;
-    String tmp = str;
-
-    while (i < offset) {
-
-      loc = tmp.indexOf(" ", loc + 1);
-      // tmp = tmp.substring(loc + 1);
-      i++;
-    }
-
-    return loc + 1;
-  }
-
-  static public boolean contains(String[] pack, String item) {
-
-    for (int i = 0; i < pack.length; i++) {
-      if (pack[i].equals(item)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static public String checkFile(String dir, String suffix) {
-
-    String fileName = null;
-    try {
-      File[] inputFile = new File(dir).listFiles();
-      if (inputFile != null) {
-        for (int i = 0; i < inputFile.length; i++) {
-
-          if (inputFile[i].getName().endsWith("." + suffix)) {
-            fileName = inputFile[i].getCanonicalPath();
-            break;
-          }
-        }
-      }
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    } finally {
-      return fileName;
-    }
-  }
-
-  static public void unlimitMemory() {
-    try {
-      String[] cmd = {
-          "/bin/sh",
-          "-c",
-          "ulimit -s unlimited" };
-      Process proc = Runtime.getRuntime().exec(cmd);
-      proc.waitFor();
-
-    } catch (Exception e) {
-      System.err.println("Wrong");
-    }
-  }
-
 }

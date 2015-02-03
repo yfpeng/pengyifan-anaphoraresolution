@@ -1,6 +1,6 @@
 package com.pengyifan.anaphoraresolution;
 
-import java.util.Vector;
+import java.util.List;
 
 import edu.nus.comp.nlp.tool.anaphoraresolution.AnnotatedText;
 import edu.nus.comp.nlp.tool.anaphoraresolution.CorreferencialPair;
@@ -15,7 +15,7 @@ public class RAPClient {
 
     AnnotatedText aText = new AnnotatedText(parseText.toString());
     AnaphoraResolver u = new AnaphoraResolver();
-    Vector<CorreferencialPair> vet = u.resolverV1(
+    List<CorreferencialPair> vet = u.resolverV1(
         aText.getNPList(),
         aText.getPRPList());
 
@@ -31,7 +31,7 @@ public class RAPClient {
       // T1 Entity 80 82 it
       // R0 Coreference Referer:T1 Referee:T0
 
-      System.out.println(referee.getOffset() + "<--" + referer.getOffset());
+      System.out.println(referee.getWordIndex() + "<--" + referer.getWordIndex());
       System.out.println(referee.getContent() + "<--" + referer.getContent());
     }
   }

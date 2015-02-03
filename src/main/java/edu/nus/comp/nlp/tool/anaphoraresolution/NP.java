@@ -20,6 +20,8 @@ import java.util.*;
 
 import javax.swing.tree.*;
 
+import com.google.common.collect.Lists;
+
 /**
  * @author Qiu Long
  * @version 1.0
@@ -31,19 +33,8 @@ class NP {
   public final static int PLEO = 2; // pleonastic pronoun;
   public final static int PRON = 3; // other pronoun;
   public final static int INDEF = 4; // indefinite NP;
-  /* number */
-  public final static int SINGLE = 1;
-  public final static int PLURAL = 2;
-  /* gender */
-  public final static int NULL = 0;
-  public final static int MALE = 1;
-  public final static int FEMALE = 2;
-
   // type of the Unit;
   private int type = NP.INDEF;
-  // number and gender;
-  private int number = NP.SINGLE;
-  private int gender = NP.NULL;
   private boolean existential = false;
   private boolean subject = false;
   private boolean directObj = false;
@@ -60,8 +51,8 @@ class NP {
 
   private DefaultMutableTreeNode nodeRepresent = null;
 
-  Vector<TagWord> tagWord = new Vector<TagWord>(); // containing instances of
-                                                   // TagWord
+  // containing instances of TagWord
+  List<TagWord> tagWord = Lists.newArrayList();
 
   NP(int sIdx, int offset) {
     this.sentIdx = sIdx;
@@ -71,7 +62,7 @@ class NP {
   NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
-    AnaphoraResolver.analyseTagWordPairs(annotatedNP, tagWord, sIdx);
+    tagWord.addAll(AnaphoraResolver.analyseTagWordPairs(annotatedNP, sIdx));
     setSlots();
   }
 
@@ -139,8 +130,8 @@ class NP {
   private void setType() {
     switch (tagWord.size()) {
     case 1:
-      TagWord aTagWord = (TagWord) tagWord.elementAt(0);
-      String tag = aTagWord.tag;
+      TagWord aTagWord = tagWord.get(0);
+      String tag = aTagWord.getTag();
       if (tag.startsWith("PRP")) {
         this.type = NP.PRON;
       }
@@ -178,7 +169,7 @@ class NP {
     if (this.tagWord.size() != 1) {
       return false;
     }
-    else if (((TagWord) tagWord.elementAt(0)).tag.startsWith("PRP")) {
+    else if (tagWord.get(0).getTag().startsWith("PRP")) {
       return true;
     }
     return false;
@@ -186,7 +177,7 @@ class NP {
 
   public boolean isReflexive() {
     if (this.isPRP()) {
-      if (((TagWord) tagWord.elementAt(0)).getContent().indexOf("sel") > 0) {
+      if (tagWord.get(0).getContent().indexOf("sel") > 0) {
         return true;
       }
     }
@@ -198,7 +189,7 @@ class NP {
   }
 
   public boolean isIt() {
-    TagWord tw = (TagWord) tagWord.elementAt(0);
+    TagWord tw = tagWord.get(0);
     if (!tw.getTag().startsWith("PRP")) {// PRP($)
       return false;
     }
@@ -242,7 +233,7 @@ class NP {
    * 
    * @param palNP
    */
-  public void mergeSalience(NP palNP) {
+  void mergeSalience(NP palNP) {
     subject = subject || palNP.subject;
     existential = existential || palNP.existential;
     directObj = directObj || palNP.directObj;
@@ -297,8 +288,7 @@ class NP {
   }
 
   public String toString() {
-    return sentIdx + "," + offset + "," + type + "," + number + "," + gender
-        // + "," + toDisplay()
+    return sentIdx + "," + offset + "," + type + ","
         + ",EX "
         + this.existential
         + ",SUB "
@@ -312,14 +302,5 @@ class NP {
         + ",SAL <"
         + getFixedSalience()
         + ">";
-  }
-
-  public String toDisplay() {
-    String text = new String();
-    text += ((TagWord) tagWord.elementAt(0)).sIdx + " ";
-    for (int i = 0; i < tagWord.size(); i++) {
-      text += ((TagWord) tagWord.elementAt(i)).word + " ";
-    }
-    return text;
   }
 }

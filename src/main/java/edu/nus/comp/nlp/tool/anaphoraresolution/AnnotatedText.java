@@ -23,9 +23,15 @@
  */
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
-import java.util.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import javax.swing.tree.*;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.swing.tree.DefaultMutableTreeNode;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Qiu Long
@@ -35,53 +41,40 @@ import javax.swing.tree.*;
 
 public class AnnotatedText {
 
-  private Vector<String> sents = new Vector<String>();
   // DefaultMutableTreeNode instance inside.overlapping allowed
-  private Vector<TagWord> NPList = new Vector<TagWord>();
+  private List<TagWord> NPList = Lists.newArrayList();
   // DefaultMutableTreeNode instance inside.overlapping disallowed
-  private Vector<TagWord> SNPList = new Vector<TagWord>();
+  private List<TagWord> SNPList = Lists.newArrayList();
   // DefaultMutableTreeNode instance inside.overlapping disallowed
-  private Vector<TagWord> PRPList = new Vector<TagWord>();
+  private List<TagWord> PRPList = Lists.newArrayList();
 
-  private Vector<Vector<TagWord>> GlobalList = new Vector<Vector<TagWord>>();
+  private List<String> sents;
+  private List<List<TagWord>> globalList;
   private DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
 
-  private StringBuffer text = null;
-
   public AnnotatedText(String parseText) {
-    this.text = new StringBuffer(parseText);
-    segment();
-    buildParseTree();
+    checkNotNull(parseText, "Input text is null");
+    segment(parseText);
+    buildParseTree(sents);
     buildNPList();
     identifyPleonasticPronoun(rootNode);
     buildSNPList();
   }
 
-  private void segment() {
-    if (text != null) {
-      List<String> sentenceList = Arrays
-          .asList(text.toString().split("\\(S1 "));
-      ListIterator<String> iterator = sentenceList.listIterator();
-      int sIdx = 0;
-      String sentence = null;
-
-      while (iterator.hasNext()) {
-        sentence = (String) iterator.next();
-        if (sentence.trim().length() > 0) {
-          sents.add(sIdx, "(S1 " + sentence.trim());
-          GlobalList
-              .add(AnaphoraResolver.analyseTagWordPairs(
-                  sentence,
-                  new Vector<TagWord>(),
-                  sIdx));
-          // NPList.addAll(extractNP(sentence,sIdx));
-          sIdx++;
-        }
+  private void segment(String text) {
+    globalList = Lists.newArrayList();
+    sents = Lists.newArrayList();
+    String[] sentenceList = text.split("\\(S1 ");
+    for (int i = 0; i < sentenceList.length; i++) {
+      String sentence = sentenceList[i];
+      if (!sentence.trim().isEmpty()) {
+        sents.add("(S1 " + sentence.trim());
+        globalList.add(AnaphoraResolver.analyseTagWordPairs(sentence, i));
       }
     }
   }
 
-  public Vector<TagWord> getNPList() {
+  public List<TagWord> getNPList() {
     if (NPList.size() == 0) {
       System.err
           .println("NPList empty. Ensure that the parser is working. If it is, run segment() first. ");
@@ -89,10 +82,7 @@ public class AnnotatedText {
     return NPList;
   }
 
-  public Vector<TagWord> getPRPList() {
-    if (PRPList.size() == 0) {
-      // System.err.println("PRPList empty. Run segment() first.");
-    }
+  public List<TagWord> getPRPList() {
     return PRPList;
   }
 
@@ -331,12 +321,11 @@ public class AnnotatedText {
 
   }
 
-  private Vector<TagWord> extractNP() {
-    Vector<TagWord> NPVec = new Vector<TagWord>();
+  private List<TagWord> extractNP() {
+    List<TagWord> NPVec = Lists.newArrayList();
     @SuppressWarnings("rawtypes")
-    Enumeration enumeration = rootNode.preorderEnumeration();// refer to 'Need
-                                                             // preorder here.'
-                                                             // line
+    // refer to 'Need preorder here.' line
+    Enumeration enumeration = rootNode.preorderEnumeration();
 
     while (enumeration.hasMoreElements()) {
       DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.
@@ -344,11 +333,10 @@ public class AnnotatedText {
       TagWord tagWd = (TagWord) (node.getUserObject());
 
       if (tagWd != null) {
-        tagWd.setDepth(node.getLevel());
         if (tagWd.getTag().startsWith("N")
             || tagWd.getTag().startsWith("PRP")) {
-          NP aNP = new NP(tagWd.sIdx, tagWd.getOffset(),
-              "(" + tagWd.tag + " " + tagWd.word + ")");
+          NP aNP = new NP(tagWd.getSentenceIndex(), tagWd.getWordIndex(),
+              "(" + tagWd.getTag() + " " + tagWd.getWord() + ")");
 
           DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.
               getParent();
@@ -644,9 +632,9 @@ public class AnnotatedText {
               if (siblingVPHeadTw.startsWith("AUX")) {
 
               } else if (siblingVPHeadTw.endsWith("VBP")) {
-                tagWd.setNumber(2);
+                tagWd.setNumber(Number.PLURAL);
               } else if (siblingVPHeadTw.endsWith("VBZ")) {
-                tagWd.setNumber(0);
+                tagWd.setNumber(Number.SINGLE);
               }
             }
           }
@@ -771,15 +759,17 @@ public class AnnotatedText {
     }
   }
 
-  public Vector<TagWord> getSNPList() {
+  public List<TagWord> getSNPList() {
     return SNPList;
   }
 
-  private void buildParseTree() {
-    for (int i = 0; i < sents.size(); i++) {
-      String aTaggedSentence = (String) sents.get(i);
-      rootNode
-          .add(AnaphoraResolver.convertSentenceToTreeNode(i, aTaggedSentence, "(", ")"));
+  private void buildParseTree(List<String> sentences) {
+    for (int i = 0; i < sentences.size(); i++) {
+      rootNode.add(AnaphoraResolver.convertSentenceToTreeNode(
+          i,
+          sentences.get(i),
+          "(",
+          ")"));
     }
   }
 

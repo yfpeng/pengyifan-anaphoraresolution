@@ -22,18 +22,24 @@ public class CorreferencialPair {
     return referee;
   }
 
-  public CorreferencialPair(String refereeRecord, String refererRecord) {
-    // (sentenceIdx,offset) word
-    if (refereeRecord.trim().equals("NULL")) {
-      referee = null;
-    }
-    else {
-      referee = new TagWord(refereeRecord.trim());
-    }
-    referer = new TagWord(refererRecord.trim());
-  }
-
   public String toString() {
-    return AnaphoraResolver.processResult(referee, referer);
+    String refereeStr = null;
+    String anaphorStr = null;
+    if (referee == null) {
+      refereeStr = "NULL";
+    } else {
+      if (System.getProperty("referenceChain").equals("false")) {
+        // true/undefined by default
+        refereeStr = referee.toStringBrief();
+      } else {
+        // bind to the earliest NP
+        refereeStr = referee.getAntecedent().toStringBrief();
+      }
+      // update salience factors for the detected coreferential pair
+      referee.mergeSalience(referer);
+      referer.mergeSalience(referee);
+    }
+    anaphorStr = ((TagWord) referer).toStringBrief();
+    return refereeStr + " <-- " + anaphorStr;
   }
 }
