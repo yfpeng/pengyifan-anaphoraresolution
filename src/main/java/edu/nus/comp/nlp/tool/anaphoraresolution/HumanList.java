@@ -1,40 +1,37 @@
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-
+import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class HumanList {
 
-  private final static String[] maleList = new String("he him himself his")
-      .split(" ");
-  private final static String[] femaleList = new String("she her herself")
-      .split(" ");
-  private final static String[] thirdPersonList = new String(
-      "he him himself his she her herself they them their themselves it its itself")
-      .split(" ");
-  private final static String[] secondPersonList = new String(
-      "you your yourself yourselves").split(" ");
-  private final static String[] firstPersonList = new String(
-      "i me my myself we us our ourselves").split(" ");
-  private final static String[] pluralList = new String(
-      "we us ourselves our they them themselves their").split(" ");
-  private final static String[] wholeList = new String(
-      "he him himself his she her herself"
-          + " i me myself my we us ourselves our you your yourself").split(" ");
-  private final static String[] complementList = new String("it its itself")
-      .split(" ");
-  private final static String[] titleList = new String("Mr. Mrs. Miss Ms.")
-      .split(" ");
+  private final static Splitter SPLITTER = Splitter.on(' ');
 
-  private final static int numberOfNameToCheck = -1; // 3000; //check only the
-                                                     // first xx
+  private final static Set<String> maleList = split("he him himself his");
+  private final static Set<String> femaleList = split("she her herself");
+  private final static Set<String> complementList = split("it its itself");
+  private final static Set<String> titleList = split("Mr. Mrs. Miss Ms.");
+
+  private final static Set<String> thirdPersonList = split(
+      "he him himself his she her herself they them their themselves it its itself");
+  private final static Set<String> secondPersonList = split(
+      "you your yourself yourselves");
+  private final static Set<String> firstPersonList = split(
+      "i me my myself we us our ourselves");
+  private final static Set<String> pluralList = split(
+      "we us ourselves our they them themselves their");
+  private final static Set<String> wholeList = split(
+      "he him himself his she her herself"
+          + " i me myself my we us ourselves our you your yourself");
+
   // most common first names,
   // respectively
   // final static Map maleNameTb =
@@ -43,124 +40,83 @@ public class HumanList {
   private final static Map<String, String> maleNameTb = getNameTb(
       System.getProperty("dataPath")
           + File.separator
-          + "MostCommonMaleFirstNamesInUS.mongabay.txt",
-      numberOfNameToCheck);
+          + "MostCommonMaleFirstNamesInUS.mongabay.txt");
   private final static Map<String, String> femaleNameTb = getNameTb(
-      System.getProperty("dataPath") + File.separator + "female_first.txt",
-      numberOfNameToCheck);
+      System.getProperty("dataPath") + File.separator + "female_first.txt");
 
-  public HumanList() {
+  private HumanList() {
+  }
 
+  private static Set<String> split(String s) {
+    return Sets.newHashSet(SPLITTER.splitToList(s));
   }
 
   public static boolean isMale(String wd) {
     // People's name should start with a capital letter
-    return contains(maleList, wd)
-        || (wd.matches("[A-Z][a-z]*") && contains(maleNameTb, wd));
+    return maleList.contains(wd)
+        || (wd.matches("[A-Z][a-z]*") && maleNameTb.containsKey(wd));
   }
 
   public static boolean isFemale(String wd) {
     // People's name should start with a capital letter
-    return contains(femaleList, wd)
-        || (wd.matches("[A-Z][a-z]*") && contains(femaleNameTb, wd));
+    return femaleList.contains(wd)
+        || (wd.matches("[A-Z][a-z]*") && femaleNameTb.containsKey(wd));
   }
 
   public static boolean isHuman(String wd) {
-    if (wd.indexOf(" ") > 0 && contains(titleList, wd.split(" ")[0], true)) {
+    if (wd.indexOf(" ") > 0 && contains(titleList, wd.split(" ")[0], false)) {
       // contains more than a single word and starts with a title
       return true;
     }
-    return contains(wholeList, wd)
-        // || contains((humanOccupationTb),wd)
+    return contains(wholeList, wd, true)
         || isMale(wd)
         || isFemale(wd);
   }
 
   public static boolean isNotHuman(String wd) {
-    return contains(complementList, wd);
+    return contains(complementList, wd, true);
   }
 
   public static boolean isPlural(String wd) {
-    return contains(pluralList, wd);
+    return contains(pluralList, wd, true);
   }
 
   public static boolean isThirdPerson(String wd) {
-    return contains(thirdPersonList, wd);
+    return contains(thirdPersonList, wd, true);
   }
 
   public static boolean isSecondPerson(String wd) {
-    return contains(secondPersonList, wd);
+    return contains(secondPersonList, wd, true);
   }
 
   public static boolean isFirstPerson(String wd) {
-    return contains(firstPersonList, wd);
+    return contains(firstPersonList, wd, true);
   }
 
-  // public static boolean isHumanTitle(String wd){
-  // return contains(humanTitleTb,wd.toLowerCase());
-  // }
-
-  public static boolean contains(String[] list, String str) {
-    return contains(list, str, false);
-  }
-
-  public static boolean contains(String[] list, String str,
-      boolean caseSensitive) {
-    boolean contain = false;
-
-    if (caseSensitive) { // make this a outer check for efficiency's sake
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].equals(str)) {
-          contain = true;
-          break;
+  public static boolean contains(Set<String> set, String s, boolean ignoreCase) {
+    for (String str : set) {
+      if (ignoreCase) {
+        if (str.equalsIgnoreCase(s)) {
+          return true;
         }
-      }
-    } else {
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].equalsIgnoreCase(str)) {
-          contain = true;
-          break;
-        }
-      }
-    }
-
-    return contain;
-  }
-
-  public static boolean contains(Map<String, String> tb, String wd) {
-    return tb.containsKey(wd);
-  }
-
-  private static String[] retriveList(String fileName) {
-    try {
-      return FileUtils.readFileToString(new File(fileName)).split("\\s+");
-    } catch (IOException e) {
-      e.printStackTrace();
-      return new String[0];
-    }
-  }
-
-  private static Map<String, String>
-      getNameTb(String listFile, int range) {
-    String[] nameArray = retriveList(listFile);
-
-    Map<String, String> tb = Maps.newHashMap();
-    checkArgument(nameArray.length > 0, "%s not found", listFile);
-
-    if (nameArray != null) {
-      int stopAt;
-      if (range == -1) {
-        stopAt = nameArray.length;
       } else {
-        stopAt = Math.min(range, nameArray.length);
-      }
-      for (int i = 0; i < stopAt; i++) {
-        String name = nameArray[i].substring(0, 1);
-        if (nameArray[i].length() > 1) {
-          name += nameArray[i].substring(1).toLowerCase();
+        if (str.equals(s)) {
+          return true;
         }
+      }
+    }
+    return false;
+  }
+
+  private static Map<String, String> getNameTb(String fileName) {
+    Map<String, String> tb = Maps.newHashMap();
+    try {
+      for (String line : Files.readAllLines(Paths.get(fileName))) {
+        String name = line.charAt(0) + line.substring(1);
         tb.put(name, name);
       }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
     return tb;
   }

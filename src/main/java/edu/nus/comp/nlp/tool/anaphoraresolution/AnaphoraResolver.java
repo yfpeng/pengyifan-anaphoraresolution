@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 import com.google.common.collect.Lists;
 
@@ -107,10 +108,9 @@ public class AnaphoraResolver {
             // building NP chains whose rings are refering to the same thing.
             if (prpNode.getSiblingCount() == 1) {
               // this PRP is the only child of the NP parent
-              DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) prpNode
-                  .getParent();
+              TreeNode parentNode = prpNode.getParent();
               if (parentNode != null) {
-                ((TagWord) parentNode.getUserObject()).setAntecedent(npTw);
+                Utils.getTagWord(parentNode).setAntecedent(npTw);
               }
             }
 
@@ -146,10 +146,9 @@ public class AnaphoraResolver {
           // building NP chains whose 'rings' are refering to the same thing.
           if (prpNode.getSiblingCount() == 1) {
             // this PRP is the only child of the NP parent
-            DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) prpNode
-                .getParent();
+            TreeNode parentNode = prpNode.getParent();
             if (parentNode != null) {
-              ((TagWord) parentNode.getUserObject()).setAntecedent(obj);
+              Utils.getTagWord(parentNode).setAntecedent(obj);
             }
           }
           // true/undefine by default
@@ -175,11 +174,9 @@ public class AnaphoraResolver {
     boolean b1 = prpTw == npTw;
     boolean b2 = npTw.getNP().getNodeRepresent().isNodeChild(
         prpTw.getNP().getNodeRepresent());
-    boolean b3 = npTw.getNP().getNodeRepresent().
-        getChildCount() == 1;
-    boolean b4 = (npTw.getNP().getNodeRepresent().
-        isNodeDescendant(prpTw.getNP().
-            getNodeRepresent()));
+    boolean b3 = npTw.getNP().getNodeRepresent().getChildCount() == 1;
+    boolean b4 = npTw.getNP().getNodeRepresent().isNodeDescendant(prpTw.getNP().
+            getNodeRepresent());
     return b1 || (b2 && b3) || b4;
   }
 
