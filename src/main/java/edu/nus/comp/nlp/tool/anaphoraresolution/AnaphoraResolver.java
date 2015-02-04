@@ -24,16 +24,12 @@
 
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.util.Arrays;
+import java.util.List;
 
-import javax.swing.tree.*;
-
-import org.apache.commons.io.FileUtils;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 
 // import edu.nus.comp.nlp.gadget.*;
 /**
@@ -56,32 +52,9 @@ public class AnaphoraResolver {
   private void loadEnv() {
     // resolver mode
     System.setProperty("referenceChain", "true");
-    System.setProperty("mode", "TagPresent");
-    System.setProperty("keep log", "false");
-    System.setProperty("display log", "true");
-    System.setProperty("EvaluationVerbose", "false");
-    // Results will be shown as a part of log, if log is displayed. So set this
-    // to true only if log is dampened.
-    System.setProperty("display resolving results", "false");
-    System.setProperty("Substitution", "true");
-    System.setProperty("display substitution results", "false");
-    System.setProperty("write substitution results", "false");
-    System.setProperty("write resolving results", "false");
-
     // environment
     ClassLoader classLoader = this.getClass().getClassLoader();
-    // global
-    String dataPath = classLoader.getResource("Data").getFile();
-    System.setProperty("dataPath", dataPath);
-
-    // working directory
-    File outputDir = Files.createTempDir();
-    System.setProperty("outputDir", outputDir.toString());
-
-    File tmpDir = Files.createTempDir();
-    System.setProperty("tmpDir", tmpDir.toString());
-
-    System.setProperty("parserOption", " ");
+    System.setProperty("dataPath", classLoader.getResource("Data").getFile());
   }
 
   public List<CorreferencialPair> resolverV1(List<TagWord> aNPList,

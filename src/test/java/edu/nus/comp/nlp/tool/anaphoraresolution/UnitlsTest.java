@@ -9,7 +9,7 @@ import org.junit.Test;
 public class UnitlsTest {
 
   private static final int SEN_INDEX = -1;
-  private static final String LINE = "(S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) (S (NP (NN katX))";
+  private static final String LINE = "(S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) (S (NP (NN katX))))))))";
   private static final TagWord W1 = new TagWord("PRP", "We", SEN_INDEX, 19);
   private static final TagWord W2 = new TagWord("VBD", "demonstrated", SEN_INDEX, 33);
   private static final TagWord W3 = new TagWord("IN", "that", SEN_INDEX, 57);

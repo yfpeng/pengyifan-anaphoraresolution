@@ -42,8 +42,16 @@ class ModalAdj {
   public ModalAdj() {
   }
 
-  static boolean contains(String word) {
+  static boolean find(String word) {
     return adj.contains(word);
   }
 
+  static boolean findAny(String[] words) {
+    for (String word : words) {
+      if (ModalAdj.find(word)) {
+        return true;
+      }
+    }
+    return true;
+  }
 }

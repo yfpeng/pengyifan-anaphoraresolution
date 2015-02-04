@@ -53,7 +53,7 @@ class NP {
   private DefaultMutableTreeNode nodeRepresent = null;
 
   // containing instances of TagWord
-  List<TagWord> tagWord = Lists.newArrayList();
+  List<TagWord> tagWords = Lists.newArrayList();
 
   NP(int sIdx, int offset) {
     this.sentIdx = sIdx;
@@ -63,7 +63,7 @@ class NP {
   NP(int sIdx, int offset, String annotatedNP) {
     this.sentIdx = sIdx;
     this.offset = offset;
-    tagWord.addAll(Utils.parseTagWordPairs(annotatedNP, sIdx));
+    tagWords.addAll(Utils.parseTagWordPairs(annotatedNP, sIdx));
     setSlots();
   }
 
@@ -129,9 +129,9 @@ class NP {
   }
 
   private void setType() {
-    switch (tagWord.size()) {
+    switch (tagWords.size()) {
     case 1:
-      TagWord aTagWord = tagWord.get(0);
+      TagWord aTagWord = tagWords.get(0);
       String tag = aTagWord.getTag();
       if (tag.startsWith("PRP")) {
         this.type = NP.PRON;
@@ -167,34 +167,17 @@ class NP {
   }
 
   public boolean isPRP() {
-    if (this.tagWord.size() != 1) {
+    if (tagWords.size() != 1) {
+      return false;
+    } else if (tagWords.get(0).getTag().startsWith("PRP")) {
+      return true;
+    } else {
       return false;
     }
-    else if (tagWord.get(0).getTag().startsWith("PRP")) {
-      return true;
-    }
-    return false;
   }
 
   public boolean isReflexive() {
-    if (this.isPRP()) {
-      if (tagWord.get(0).getContent().indexOf("sel") > 0) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean isHuman() {
-    return true;
-  }
-
-  public boolean isIt() {
-    TagWord tw = tagWord.get(0);
-    if (!tw.getTag().startsWith("PRP")) {// PRP($)
-      return false;
-    }
-    return tw.getContent().toLowerCase().startsWith("it");// it its itself
+    return isPRP() && tagWords.get(0).getText().indexOf("sel") > 0;
   }
 
   /**

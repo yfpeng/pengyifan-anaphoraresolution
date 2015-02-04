@@ -3,7 +3,14 @@ package edu.nus.comp.nlp.tool.anaphoraresolution;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
+
 import com.google.common.collect.Lists;
+
+import edu.nus.comp.nlp.tool.anaphoraresolution.TreeAdapter.TagWordAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.trees.Tree;
 
 public abstract class Utils {
 
@@ -12,10 +19,14 @@ public abstract class Utils {
    * example,
    * 
    * <pre>
-   * (S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) (S (NP (NN katX)) ...
+   * (S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) 
+   * (S (NP (NN katX)) ...
    * </pre>
    * 
-   * Returns (PRP We sIndex 18) (VBD demonstrated, ) (IN that) (NN katX) ...
+   * Returns
+   * 
+   * </pre> (PRP We ? 18) (VBD demonstrated ? 33) (IN that ? 57) (NN katX ? 74)
+   * ... </pre>
    * 
    * @param s
    * @param sentenceIndex
@@ -57,4 +68,50 @@ public abstract class Utils {
 
     return tags;
   }
+
+  @Deprecated
+  public static TagWord getTagWord(Tree t) {
+    return ((CoreLabel) t.label()).get(TagWordAnnotation.class);
+  }
+
+  @Deprecated
+  public static String getTag(Tree t) {
+    return getTagWord(t).getTag();
+  }
+
+  public static String getTag(TreeNode t) {
+    return getTagWord(t).getTag();
+  }
+  
+  public static String getText(TreeNode t) {
+    return getTagWord(t).getText();
+  }
+
+  public static TagWord getTagWord(TreeNode t) {
+    return (TagWord) ((DefaultMutableTreeNode) t).getUserObject();
+  }
+
+  @Deprecated
+  public static Tree getPreviousSibling(Tree t, Tree root) {
+    List<Tree> siblings = t.siblings(root);
+    int index = siblings.indexOf(t);
+    if (index == -1 || index == 0) {
+      return null;
+    } else {
+      return siblings.get(index - 1);
+    }
+  }
+
+  @Deprecated
+  public static Tree getNextSibling(Tree t, Tree root) {
+    List<Tree> siblings = t.siblings(root);
+    int index = siblings.indexOf(t);
+    if (index == -1 || index == siblings.size() - 1) {
+      return null;
+    } else {
+      return siblings.get(index + 1);
+    }
+  }
+
+  
 }

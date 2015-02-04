@@ -46,90 +46,6 @@ import com.google.common.collect.Lists;
 
 public class TagWord {
 
-  private int sentenceIndex; // indicates sentence
-  private int wordIndex;
-  private Number number = Number.UNCLEAR;
-  private Gender gender = Gender.UNCLEAR;
-  private Human human = Human.UNCLEAR;
-  private People people = People.UNCLEAR;
-  private boolean pleonastic = false; // represents a pleonastic pronoun
-
-  private String tag;
-  private String word;
-  private boolean isHeadNP = false;
-  private boolean hasNPAncestor = false;
-  private DefaultMutableTreeNode head = null; // reference to the head for this
-                                              // NP
-  private DefaultMutableTreeNode argumentHead = null; // the head as this NP is
-                                                      // augument for
-  private DefaultMutableTreeNode argumentHost = null; // the other np as
-                                                      // augument for the same
-                                                      // head
-  private DefaultMutableTreeNode adjunctHost = null; // the unit as adjunct for
-  private DefaultMutableTreeNode NPDomainHost = null;
-  private DefaultMutableTreeNode determiner = null;
-  private DefaultMutableTreeNode determinee = null;
-  private List<DefaultMutableTreeNode> containHost = Lists.newArrayList();
-  private NP np = null;
-  private TagWord antecedent = null;
-
-  // the dynamically updated salience value
-  int tmpSalience = 0;
-
-  public TagWord(String tag, String word, int sentenceIndex, int wordIndex) {
-    this.tag = tag;
-    this.word = word;
-    this.sentenceIndex = sentenceIndex;
-    this.wordIndex = wordIndex;
-  }
-
-  public String getWord() {
-    return this.word;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == this) {
-      return true;
-    }
-    if (!(obj instanceof TagWord)) {
-      return false;
-    }
-    TagWord rhs = (TagWord) obj;
-    return Objects.equals(word, rhs.word)
-        && Objects.equals(tag, rhs.tag)
-        && Objects.equals(sentenceIndex, rhs.sentenceIndex)
-        && Objects.equals(wordIndex, rhs.wordIndex)
-        && Objects.equals(number, rhs.number)
-        && Objects.equals(gender, rhs.gender)
-        && Objects.equals(human, rhs.human)
-        && Objects.equals(people, rhs.people)
-        && Objects.equals(pleonastic, rhs.pleonastic)
-        && Objects.equals(isHeadNP, rhs.isHeadNP)
-        && Objects.equals(hasNPAncestor, rhs.hasNPAncestor)
-        && Objects.equals(head, rhs.head)
-        && Objects.equals(np, rhs.np)
-        && Objects.equals(antecedent, rhs.antecedent)
-        ;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        word,
-        tag,
-        sentenceIndex,
-        wordIndex,
-        number,
-        gender,
-        human,
-        people,
-        pleonastic,
-        isHeadNP,
-        hasNPAncestor,
-        head);
-  }
-
   /***
    * s: (Tag content), where content could be also a combinedStr
    */
@@ -147,55 +63,113 @@ public class TagWord {
     }
     return new TagWord(tag, word, sentenceIndex, wordIndex);
   }
+  private int sentenceIndex; // indicates sentence
+  private int wordIndex;
+  private Number number = Number.UNCLEAR;
+  private Gender gender = Gender.UNCLEAR;
+  private Human human = Human.UNCLEAR;
+  private People people = People.UNCLEAR;
 
-  public void setWordIndex(int wordIndex) {
+  private boolean pleonastic = false; // represents a pleonastic pronoun
+  private String tag;
+  private String text;
+  private boolean isHeadNP = false;
+  private boolean hasNPAncestor = false;
+                                              private DefaultMutableTreeNode head = null; // reference to the head for this
+                                                      // NP
+  private DefaultMutableTreeNode argumentHead = null; // the head as this NP is
+                                                      // augument for
+  private DefaultMutableTreeNode argumentHost = null; // the other np as
+  // augument for the same
+                                                      // head
+  private DefaultMutableTreeNode adjunctHost = null; // the unit as adjunct for
+  private DefaultMutableTreeNode NPDomainHost = null;
+  private DefaultMutableTreeNode determiner = null;
+  private DefaultMutableTreeNode determinee = null;
+  private List<DefaultMutableTreeNode> containHost = Lists.newArrayList();
+  private NP np = null;
+
+  private TagWord antecedent = null;
+
+  // the dynamically updated salience value
+  int tmpSalience = 0;
+
+  public TagWord(String tag, String text, int sentenceIndex, int wordIndex) {
+    this.tag = tag;
+    this.text = text;
+    this.sentenceIndex = sentenceIndex;
     this.wordIndex = wordIndex;
   }
 
   /**
-   * Returns index of the word as a whole in the sentence
-   * 
-   * @return index of the word as a whole in the sentence
+   * amplify sentence index difference by multiply 100
    */
-  public int getWordIndex() {
-    return wordIndex;
+  public int distanceInText(TagWord tw) {
+    return Math.abs(this.getSentenceIndex() - tw.getSentenceIndex()) * 100
+        + Math.abs(this.getWordIndex() - tw.getWordIndex());
   }
 
-  public int getSentenceIndex() {
-    return sentenceIndex;
-  }
-
-  public void setNP(NP np) {
-    this.np = np;
-  }
-
-  public void setNumber(Number number) {
-    this.number = number;
-  }
-
-  public Number getNumber() {
-    if (number != Number.UNCLEAR) {
-      return number;
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
     }
-    if (np.tagWord.size() == 1) {
-      String tag = np.tagWord.get(0).getTag();
-      if (tag.endsWith("S")) { // NNS, NPS
-        number = Number.PLURAL;
-      } else if (HumanList.isPlural(getText())) {
-        number = Number.PLURAL;
-      } else {
-        number = Number.SINGLE;
-      }
-    } else if (getNP().hasAnd()) {
-      number = Number.PLURAL;
-    } else if (this.head != null) {
-      number = ((TagWord) head.getUserObject()).getNumber();
+    if (!(obj instanceof TagWord)) {
+      return false;
     }
-    return this.number;
+    TagWord rhs = (TagWord) obj;
+    return Objects.equals(text, rhs.text)
+        && Objects.equals(tag, rhs.tag)
+        && Objects.equals(sentenceIndex, rhs.sentenceIndex)
+        && Objects.equals(wordIndex, rhs.wordIndex)
+        && Objects.equals(number, rhs.number)
+        && Objects.equals(gender, rhs.gender)
+        && Objects.equals(human, rhs.human)
+        && Objects.equals(people, rhs.people)
+        && Objects.equals(pleonastic, rhs.pleonastic)
+        && Objects.equals(isHeadNP, rhs.isHeadNP)
+        && Objects.equals(hasNPAncestor, rhs.hasNPAncestor)
+        && Objects.equals(head, rhs.head)
+        && Objects.equals(np, rhs.np)
+        && Objects.equals(antecedent, rhs.antecedent)
+        ;
   }
 
-  public NP getNP() {
-    return this.np;
+  public DefaultMutableTreeNode getAdjunctHost() {
+    return this.adjunctHost;
+  }
+
+  /**
+   *
+   * @return the anaphoric antecedent of the TagWord, if there is one. Itself
+   *         is returned otherwise.
+   */
+  public TagWord getAntecedent() {
+    if (antecedent == null) {
+      return this;
+    } else {
+      return this.antecedent.getAntecedent();
+    }
+  }
+
+  public DefaultMutableTreeNode getArgumentHead() {
+    return this.argumentHead;
+  }
+
+  public DefaultMutableTreeNode getArgumentHost() {
+    return this.argumentHost;
+  }
+
+  public java.util.List<DefaultMutableTreeNode> getContainHost() {
+    return this.containHost;
+  }
+
+  public DefaultMutableTreeNode getDeterminee() {
+    return determinee;
+  }
+
+  public DefaultMutableTreeNode getDeterminer() {
+    return determiner;
   }
 
   /**
@@ -207,10 +181,10 @@ public class TagWord {
     }
     String h;
     if (head == null) {
-      h = word; // for prp
+      h = text; // for prp
     } else {
       TagWord tw = (TagWord) head.getUserObject();
-      h = tw.getContent();
+      h = tw.getText();
     }
 
     if (HumanList.isMale(h)) {
@@ -221,27 +195,8 @@ public class TagWord {
     return gender;
   }
 
-  public People getPronounPeople() {
-    if (people != People.UNCLEAR) {
-      return people;
-    }
-    String h;
-    if (head == null) {
-      h = word; // for prp,
-    } else {
-      h = ((TagWord) head.getUserObject()).getContent();
-    }
-
-    if (HumanList.isThirdPerson(h)) {
-      people = People.THIRD;
-    } else if (HumanList.isSecondPerson(h)) {
-      people = People.SECOND;
-    } else if (HumanList.isFirstPerson(h)) {
-      people = People.FIRST;
-    } else {
-      people = People.UNCLEAR;
-    }
-    return people;
+  public DefaultMutableTreeNode getHead() {
+    return this.head;
   }
 
   /**
@@ -259,7 +214,7 @@ public class TagWord {
     }
 
     // check the content of this NP as the first attempt
-    String h = getContent();
+    String h = getText();
     if (HumanList.isHuman(h)) {
       human = Human.HUMAN;
       return human;
@@ -273,7 +228,7 @@ public class TagWord {
     }
 
     // If above fails, check the head of this NP
-    h = ((TagWord) head.getUserObject()).getContent();
+    h = ((TagWord) head.getUserObject()).getText();
     if (HumanList.isHuman(h)) {
       human = Human.HUMAN;
       return human;
@@ -285,17 +240,42 @@ public class TagWord {
     return human;
   }
 
-  public void setPeople(People people) {
-    this.people = people;
+  public NP getNP() {
+    return this.np;
+  }
+
+  public DefaultMutableTreeNode getNPDomainHost() {
+    return this.NPDomainHost;
+  }
+
+  public Number getNumber() {
+    if (number != Number.UNCLEAR) {
+      return number;
+    }
+    if (np.tagWords.size() == 1) {
+      String tag = np.tagWords.get(0).getTag();
+      if (tag.endsWith("S")) { // NNS, NPS
+        number = Number.PLURAL;
+      } else if (HumanList.isPlural(getText())) {
+        number = Number.PLURAL;
+      } else {
+        number = Number.SINGLE;
+      }
+    } else if (getNP().hasAnd()) {
+      number = Number.PLURAL;
+    } else if (this.head != null) {
+      number = ((TagWord) head.getUserObject()).getNumber();
+    }
+    return this.number;
   }
 
   public People getPeople() {
     if (people != People.UNCLEAR) {
       return people;
     }
-    if (this.getContent().toLowerCase().matches("we|us")) {
+    if (this.getText().toLowerCase().matches("we|us")) {
       people = People.FIRST;
-    } else if (this.getContent().toLowerCase().matches("you")) {
+    } else if (this.getText().toLowerCase().matches("you")) {
       people = People.SECOND;
     } else {
       people = People.THIRD; // default
@@ -303,99 +283,27 @@ public class TagWord {
     return people;
   }
 
-  public String getTag() {
-    return this.tag;
-  }
-
-  public boolean isPRP() {
-    return this.getNP().isPRP();
-  }
-
-  public String getText() {
-    return getContent();
-  }
-
-  public void setHead(DefaultMutableTreeNode n) {
-    if (this.number != Number.UNCLEAR) {
-      // number should be set afterword
-      System.err.println("Number shouldn't be set before setHead.");
+  public People getPronounPeople() {
+    if (people != People.UNCLEAR) {
+      return people;
     }
-    this.head = n;
-  }
+    String h;
+    if (head == null) {
+      h = text; // for prp,
+    } else {
+      h = ((TagWord) head.getUserObject()).getText();
+    }
 
-  public DefaultMutableTreeNode getHead() {
-    return this.head;
-  }
-
-  public void setDeterminer(DefaultMutableTreeNode n) {
-    determiner = n;
-  }
-
-  public DefaultMutableTreeNode getDeterminer() {
-    return determiner;
-  }
-
-  public void setDeterminee(DefaultMutableTreeNode n) {
-    determinee = n;
-  }
-
-  public DefaultMutableTreeNode getDeterminee() {
-    return determinee;
-  }
-
-  /**
-   * @param argumentHost: the NP in the same argument domain
-   */
-  public void setArgumentHost(DefaultMutableTreeNode n) {
-    this.argumentHost = n;
-  }
-
-  public DefaultMutableTreeNode getArgumentHost() {
-    return this.argumentHost;
-  }
-
-  public void setArgumentHead(DefaultMutableTreeNode n) {
-    this.argumentHead = n;
-  }
-
-  public DefaultMutableTreeNode getArgumentHead() {
-    return this.argumentHead;
-  }
-
-  public void setAdjunctHost(DefaultMutableTreeNode n) {
-    this.adjunctHost = n;
-  }
-
-  public DefaultMutableTreeNode getAdjunctHost() {
-    return this.adjunctHost;
-  }
-
-  public void setNPDomainHost(DefaultMutableTreeNode n) {
-    this.NPDomainHost = n;
-  }
-
-  public DefaultMutableTreeNode getNPDomainHost() {
-    return this.NPDomainHost;
-  }
-
-  public void setContainHost(DefaultMutableTreeNode n) {
-    this.containHost.add(n);
-  }
-
-  public void setContainHost(List<DefaultMutableTreeNode> n) {
-    this.containHost.addAll(n);
-  }
-
-  public java.util.List<DefaultMutableTreeNode> getContainHost() {
-    return this.containHost;
-  }
-
-  public void setPleonastic(boolean b) {
-    this.pleonastic = b;
-  }
-
-  public boolean isPleonastic() {
-    return this.pleonastic;
+    if (HumanList.isThirdPerson(h)) {
+      people = People.THIRD;
+    } else if (HumanList.isSecondPerson(h)) {
+      people = People.SECOND;
+    } else if (HumanList.isFirstPerson(h)) {
+      people = People.FIRST;
+    } else {
+      people = People.UNCLEAR;
+    }
+    return people;
   }
 
   /**
@@ -422,6 +330,60 @@ public class TagWord {
     return sal;
   }
 
+  public int getSalience(TagWord tw) {
+    return getSalience(tw.getNP());
+  }
+
+  public int getSentenceIndex() {
+    return sentenceIndex;
+  }
+
+  public String getTag() {
+    return this.tag;
+  }
+
+  public String getText() {
+    return text;
+  }
+
+  public int getTmpSalience() {
+    return this.tmpSalience;
+  }
+
+  public String getWord() {
+    return this.text;
+  }
+
+  /**
+   * Returns index of the word as a whole in the sentence
+   * 
+   * @return index of the word as a whole in the sentence
+   */
+  public int getWordIndex() {
+    return wordIndex;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        text,
+        tag,
+        sentenceIndex,
+        wordIndex,
+        number,
+        gender,
+        human,
+        people,
+        pleonastic,
+        isHeadNP,
+        hasNPAncestor,
+        head);
+  }
+
+  public boolean hasNPAncestor() {
+    return hasNPAncestor;
+  }
+
   /**
    * @return true if thsi NP is not contained in another NP
    */
@@ -437,12 +399,12 @@ public class TagWord {
     return isHeadNP;
   }
 
-  public boolean hasNPAncestor() {
-    return hasNPAncestor;
+  public boolean isPleonastic() {
+    return this.pleonastic;
   }
 
-  public void setHasNPAncestor(boolean b) {
-    hasNPAncestor = b;
+  public boolean isPRP() {
+    return this.getNP().isPRP();
   }
 
   /**
@@ -465,56 +427,8 @@ public class TagWord {
     }
   }
 
-  public int getSalience(TagWord tw) {
-    return getSalience(tw.getNP());
-  }
-
-  public void setTmpSalience(int s) {
-    this.tmpSalience = s;
-  }
-
-  public int getTmpSalience() {
-    return this.tmpSalience;
-  }
-
-  /**
-   * amplify sentence index difference by multiply 100
-   */
-  public int distanceInText(TagWord tw) {
-    return Math.abs(this.getSentenceIndex() - tw.getSentenceIndex()) * 100
-        + Math.abs(this.getWordIndex() - tw.getWordIndex());
-  }
-
-  public String getContent() {
-
-    if (word.indexOf(")") == -1) {
-      // word = " something"
-      return word;
-    }
-    int pointerR = word.indexOf(")");
-    int pointerL = word.substring(0, pointerR).lastIndexOf(" ");
-    int spaceAfter;
-    String text = word.substring(pointerL + 1, pointerR);
-    // check for the leading "("
-    if (text.endsWith("-LRB-")) {
-      text = "(";
-    } else if (text.endsWith("-RRB-")) {
-      text = ")";
-    }
-
-    while (((spaceAfter = word.indexOf(" ", pointerR)) != -1)
-        && ((pointerR = word.indexOf(")", spaceAfter)) != -1)) {
-      pointerL = word.substring(0, pointerR).lastIndexOf(" ");
-      String tmp = " " + word.substring(pointerL + 1, pointerR);
-      if (tmp.endsWith("-LRB-")) {
-        tmp = " (";
-      } else if (tmp.endsWith("-RRB-")) {
-        tmp = " )";
-      }
-
-      text += tmp;
-    }
-    return text;
+  public void setAdjunctHost(DefaultMutableTreeNode n) {
+    this.adjunctHost = n;
   }
 
   public void setAntecedent(TagWord ant) {
@@ -524,51 +438,101 @@ public class TagWord {
     antecedent = ant;
   }
 
-  /**
-   *
-   * @return the anaphoric antecedent of the TagWord, if there is one. Itself
-   *         is returned otherwise.
-   */
-  public TagWord getAntecedent() {
-    if (antecedent == null) {
-      return this;
-    } else {
-      return this.antecedent.getAntecedent();
-    }
+  public void setArgumentHead(DefaultMutableTreeNode n) {
+    this.argumentHead = n;
   }
 
-  public String toStringBrief() {
-    return "(" + sentenceIndex + "," + wordIndex + ") " + getContent();
+  /**
+   * @param argumentHost: the NP in the same argument domain
+   */
+  public void setArgumentHost(DefaultMutableTreeNode n) {
+    this.argumentHost = n;
+  }
+
+  public void setContainHost(DefaultMutableTreeNode n) {
+    this.containHost.add(n);
+  }
+
+  public void setContainHost(List<DefaultMutableTreeNode> n) {
+    this.containHost.addAll(n);
+  }
+
+  public void setDeterminee(DefaultMutableTreeNode n) {
+    determinee = n;
+  }
+
+  public void setDeterminer(DefaultMutableTreeNode n) {
+    determiner = n;
+  }
+
+  public void setHasNPAncestor(boolean b) {
+    hasNPAncestor = b;
+  }
+
+  public void setHead(DefaultMutableTreeNode n) {
+    if (this.number != Number.UNCLEAR) {
+      // number should be set afterword
+      System.err.println("Number shouldn't be set before setHead.");
+    }
+    this.head = n;
+  }
+
+  public void setNP(NP np) {
+    this.np = np;
+  }
+
+  public void setNPDomainHost(DefaultMutableTreeNode n) {
+    this.NPDomainHost = n;
+  }
+
+  public void setNumber(Number number) {
+    this.number = number;
+  }
+
+  public void setPeople(People people) {
+    this.people = people;
+  }
+  
+  public void setPleonastic(boolean b) {
+    this.pleonastic = b;
+  }
+
+  public void setTmpSalience(int s) {
+    this.tmpSalience = s;
+  }
+
+  public void setWordIndex(int wordIndex) {
+    this.wordIndex = wordIndex;
   }
 
   public String toString() {
     String localhead = " NULL";
     if (head != null) {
-      localhead = ((TagWord) (head.getUserObject())).getContent();
+      localhead = ((TagWord) (head.getUserObject())).getText();
     }
 
     String argHStr = " NULL";
     if (this.argumentHost != null) {
       argHStr = " (ARG " +
-          ((TagWord) (this.argumentHost.getUserObject())).getContent() + ")";
+          ((TagWord) (this.argumentHost.getUserObject())).getText() + ")";
     }
 
     String adjHStr = " NULL";
     if (this.adjunctHost != null) {
       adjHStr = " (ADJ " +
-          ((TagWord) (this.adjunctHost.getUserObject())).getContent() + ")";
+          ((TagWord) (this.adjunctHost.getUserObject())).getText() + ")";
     }
 
     String NPDHStr = " NULL";
     if (this.NPDomainHost != null) {
       NPDHStr = " (NPDomain " +
-          ((TagWord) (this.NPDomainHost.getUserObject())).getContent() + ")";
+          ((TagWord) (this.NPDomainHost.getUserObject())).getText() + ")";
     }
 
     String argHeadStr = " NULL";
     if (this.argumentHead != null) {
       NPDHStr = " (ARGHead " +
-          ((TagWord) (this.argumentHead.getUserObject())).getContent() + ")";
+          ((TagWord) (this.argumentHead.getUserObject())).getText() + ")";
     }
 
     String containHostStr = " NULL";
@@ -577,7 +541,7 @@ public class TagWord {
       for (int i = 0; i < containHost.size(); i++) {
         containHostStr +=
             ((TagWord) ((DefaultMutableTreeNode) containHost.get(i)).
-                getUserObject()).getContent() + "/";
+                getUserObject()).getText() + "/";
       }
       containHostStr += ") ";
     }
@@ -606,7 +570,7 @@ public class TagWord {
         + "         "
         + tag
         + " "
-        + getContent()
+        + getText()
         + " <NUMBER> "
         + this.number
         + localhead
@@ -618,6 +582,10 @@ public class TagWord {
         + "\t "
         + npShow;
 
+  }
+
+  public String toStringBrief() {
+    return "(" + sentenceIndex + "," + wordIndex + ") " + getText();
   }
 
 }
