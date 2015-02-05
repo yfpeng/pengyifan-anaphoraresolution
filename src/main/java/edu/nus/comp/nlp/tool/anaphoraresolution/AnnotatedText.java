@@ -67,34 +67,19 @@ public class AnnotatedText {
   // DefaultMutableTreeNode instance inside.overlapping disallowed
   private List<TagWord> PRPList;
 
-  private List<List<TagWord>> globalList;
-
   private DefaultMutableTreeNode rootNode;
 
   private AnnotatedText(List<String> sentences) {
-    globalList = Lists.newArrayList();
     rootNode = new DefaultMutableTreeNode();
     for (int i = 0; i < sentences.size(); i++) {
       String sentence = sentences.get(i);
       TreeAdapter adpater = new TreeAdapter(Tree.valueOf(sentence), i);
       DefaultMutableTreeNode tn = adpater.getDefaultMutableTreeNode();
       rootNode.add(tn);
-      // leaves
-      List<TagWord> tags = Lists.newArrayList();
-      @SuppressWarnings("rawtypes")
-      Enumeration e = tn.preorderEnumeration();
-      while (e.hasMoreElements()) {
-        TreeNode t = (TreeNode) e.nextElement();
-        if (t.isLeaf()) {
-          tags.add(Utils.getTagWord(t));
-        }
-      }
-      globalList.add(tags);
     }
 
     // rootNode = buildParseTree(sents);
     NPExtractor ex = new NPExtractor(rootNode);
-    ex.extractNP();
     NPList = ex.getNPList();
     PRPList = ex.getPRPList();
 
@@ -139,175 +124,103 @@ public class AnnotatedText {
     Enumeration enumeration = root.preorderEnumeration();
 
     while (enumeration.hasMoreElements()) {
-      DefaultMutableTreeNode parentNode = null;
-      DefaultMutableTreeNode NPnode = null;
-      DefaultMutableTreeNode siblingNode = null;
-      DefaultMutableTreeNode PrevSiblingNode = null;
-      DefaultMutableTreeNode nephewNode1 = null;
-      DefaultMutableTreeNode nephewNode2 = null;
-      DefaultMutableTreeNode nephewNode3 = null;
-      boolean isPleonastic = false;
-
-      DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.
-          nextElement();
-      TagWord tagWd = (TagWord) (node.getUserObject());
+      TreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
+      TagWord tagWd = Utils.getTagWord(node);
       if (tagWd == null) {
         continue;
       }
 
-      if (tagWd.getTag().equalsIgnoreCase("PRP")
-          && tagWd.getText().equalsIgnoreCase("it")) {
-        isPleonastic = false;
+      if (!tagWd.getTag().equalsIgnoreCase("PRP")
+          || !tagWd.getText().equalsIgnoreCase("it")) {
+        continue;
+      }
 
-        NPnode = (DefaultMutableTreeNode) node.getParent();
-        checkNotNull(NPnode, "Weird: (PRP it) has no parent");
+      DefaultMutableTreeNode NPnode = (DefaultMutableTreeNode) node.getParent();
+      checkNotNull(NPnode, "Weird: (PRP it) has no parent");
 
-        parentNode = (DefaultMutableTreeNode) NPnode.getParent();
-        checkNotNull(parentNode, "Weird: (PRP it) has no grandparent");
+      DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) NPnode
+          .getParent();
+      checkNotNull(parentNode, "Weird: (PRP it) has no grandparent");
 
-        siblingNode = (DefaultMutableTreeNode) NPnode.getNextSibling();
-        if ((siblingNode != null) && (siblingNode.getChildCount() > 0)) {
-
-          nephewNode1 = (DefaultMutableTreeNode) siblingNode.getChildAt(0);
-          nephewNode2 = (DefaultMutableTreeNode) nephewNode1.getNextSibling();
-          if (nephewNode2 != null) {
-            nephewNode3 = (DefaultMutableTreeNode) nephewNode2.getNextSibling();
-          }
+      DefaultMutableTreeNode siblingNode = (DefaultMutableTreeNode) NPnode
+          .getNextSibling();
+      DefaultMutableTreeNode nephewNode1 = null;
+      DefaultMutableTreeNode nephewNode2 = null;
+      DefaultMutableTreeNode nephewNode3 = null;
+      if ((siblingNode != null) && (siblingNode.getChildCount() > 0)) {
+        nephewNode1 = (DefaultMutableTreeNode) siblingNode.getChildAt(0);
+        nephewNode2 = (DefaultMutableTreeNode) nephewNode1.getNextSibling();
+        if (nephewNode2 != null) {
+          nephewNode3 = (DefaultMutableTreeNode) nephewNode2.getNextSibling();
         }
+      }
+      DefaultMutableTreeNode PrevSiblingNode = (DefaultMutableTreeNode) NPnode
+          .getPreviousSibling();
 
-        PrevSiblingNode = (DefaultMutableTreeNode) NPnode.getPreviousSibling();
+      // identify pleonastic pronouns
+      boolean isPleonastic = false;
+      // It is very necessary
+      // It is recommended that
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VP")
+          && Utils.equalsIgnoreCaseTag(nephewNode1, "AUX")
+          && Utils.equalsIgnoreCaseTag(nephewNode2, "ADJP")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(nephewNode2).split(" "));
+      }
 
-        // identify pleonastic pronouns
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VP")
+          && Utils.equalsIgnoreCaseTag(nephewNode1, "AUX")
+          && Utils.equalsIgnoreCaseTag(nephewNode3, "ADJP")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(nephewNode3).split(" "));
+      }
 
-        // It is very necessary
-        // It is recommended that
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))
-            && (nephewNode1 != null)
-            && (((TagWord) nephewNode1.getUserObject()).getTag()
-                .equalsIgnoreCase("AUX"))
-            && (nephewNode2 != null)
-            &&
-            ((((TagWord) nephewNode2.getUserObject()).getTag()
-                .equalsIgnoreCase("ADJP"))
-            || ((nephewNode3 != null) && (((TagWord) nephewNode3
-                .getUserObject()).getTag().equalsIgnoreCase("ADJP")))
-            )) {
-          DefaultMutableTreeNode adjpNode = (((TagWord) nephewNode2
-              .getUserObject()).getTag().equalsIgnoreCase("ADJP")) ? nephewNode2
-              : nephewNode3;
-          isPleonastic |= ModalAdj.findAny(Utils.getText(adjpNode).split(" "));
-        }
+      // really appreciate it
+      if (Utils.equalsIgnoreCaseTag(PrevSiblingNode, "VB")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(PrevSiblingNode)
+            .split(" "));
+      }
 
-        // really appreciate it
-        if ((PrevSiblingNode != null)
-            && (((TagWord) PrevSiblingNode.getUserObject()).getTag()
-                .startsWith("VB"))) {
-          isPleonastic |= ModalAdj.findAny(Utils.getText(PrevSiblingNode)
-              .split(
-                  " "));
-        }
+      // it may/might be
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VP")
+          && Utils.equalsIgnoreCaseTag(nephewNode1, "MD")
+          && Utils.equalsIgnoreCaseTag(nephewNode2, "VP")
+          && nephewNode2.getChildCount() > 1
+          && Utils.equalsIgnoreCaseTag(nephewNode2.getChildAt(0), "AUX")
+          && Utils.equalsIgnoreCaseTag(nephewNode2.getChildAt(1), "ADJP")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(nephewNode2).split(
+            " "));
+      }
 
-        // it may/might be
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))
-            && (nephewNode1 != null)
-            && (((TagWord) nephewNode1.getUserObject()).getTag()
-                .equalsIgnoreCase("MD"))
-            && (nephewNode2 != null)
-            && (((TagWord) nephewNode2.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))) {
+      DefaultMutableTreeNode uncleNode = (DefaultMutableTreeNode) parentNode
+          .getPreviousSibling();
+      // I will/could appreciate/ believe it
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VB")
+          && Utils.equalsIgnoreCaseTag(uncleNode, "MD")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(siblingNode).split(" "));
+      }
 
-          if (nephewNode2.getChildCount() > 1) {
-            DefaultMutableTreeNode subNode1 = (DefaultMutableTreeNode) nephewNode2
-                .getChildAt(0);
-            DefaultMutableTreeNode subNode2 = (DefaultMutableTreeNode) nephewNode2
-                .getChildAt(1);
-            if (((TagWord) subNode1.getUserObject()).getTag().equalsIgnoreCase(
-                "AUX")
-                && ((TagWord) subNode2.getUserObject()).getTag()
-                    .equalsIgnoreCase("ADJP")) {
-              isPleonastic |= ModalAdj.findAny(Utils.getText(nephewNode2)
-                  .split(
-                      " "));
-            }
-          }
-        }
+      // find it important
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "ADJP")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(siblingNode).split(" "));
+      }
 
-        DefaultMutableTreeNode uncleNode = (DefaultMutableTreeNode) parentNode
-            .getPreviousSibling();
-        // I will/could appreciate/ believe it
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VB"))
-            && (uncleNode != null)
-            && (((TagWord) uncleNode.getUserObject()).getTag()
-                .equalsIgnoreCase("MD"))) {
-          isPleonastic |= ModalAdj
-              .findAny(Utils.getText(siblingNode).split(" "));
-        }
+      // it is thanks to/it is time to
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VP")
+          && Utils.equalsIgnoreCaseTag(nephewNode1, "AUX")
+          && Utils.equalsIgnoreCaseTag(nephewNode2, "NP")) {
+        isPleonastic |= ModalAdj.findAny(Utils.getText(nephewNode2).split(" "));
+      }
 
-        // find it important
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("ADJP"))) {
-          isPleonastic |= ModalAdj
-              .findAny(Utils.getText(siblingNode).split(" "));
-        }
+      // it follows that
+      if (Utils.equalsIgnoreCaseTag(siblingNode, "VP")
+          && Utils.equalsIgnoreCaseTag(nephewNode1, "VB")
+          && Utils.equalsIgnoreCaseTag(nephewNode2, "S")) {
+        isPleonastic |= ModalAdj.find(Utils.getText(nephewNode1));
+      }
 
-        // it is thanks to
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))
-            && (nephewNode1 != null)
-            && (((TagWord) nephewNode1.getUserObject()).getTag()
-                .equalsIgnoreCase("AUX"))
-            && (nephewNode2 != null)
-            && (((TagWord) nephewNode2.getUserObject()).getTag()
-                .equalsIgnoreCase("NP"))) {
-          isPleonastic |= ModalAdj
-              .findAny(Utils.getText(nephewNode2).split(" "));
-        }
-
-        // it follows that
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))
-            && (nephewNode1 != null)
-            && (((TagWord) nephewNode1.getUserObject()).getTag()
-                .startsWith("VB"))
-            && (nephewNode2 != null)
-            && (((TagWord) nephewNode2.getUserObject()).getTag()
-                .startsWith("S"))) {
-
-          String word = ((TagWord) nephewNode1.getUserObject()).getText();
-          isPleonastic |= ModalAdj.find(word);
-        }
-
-        // it is time to
-        if ((siblingNode != null)
-            && (((TagWord) siblingNode.getUserObject()).getTag()
-                .equalsIgnoreCase("VP"))
-            && (nephewNode1 != null)
-            && (((TagWord) nephewNode1.getUserObject()).getTag()
-                .equalsIgnoreCase("AUX"))
-            && (nephewNode2 != null)
-            && (((TagWord) nephewNode2.getUserObject()).getTag()
-                .equalsIgnoreCase("NP"))) {
-
-          String[] words = Utils.getTagWord(nephewNode2).getText().split(" ");
-          isPleonastic |= ModalAdj.find(words[0]);
-        }
-
-        tagWd.setPleonastic(isPleonastic);
-        // set parent NP as pleonastic also
-        ((TagWord) NPnode.getUserObject()).setPleonastic(isPleonastic);
-
-      } // if it's (PRP it)
+      tagWd.setPleonastic(isPleonastic);
+      // set parent NP as pleonastic also
+      Utils.getTagWord(NPnode).setPleonastic(isPleonastic);
     } // /~while
-
   }
 
 }

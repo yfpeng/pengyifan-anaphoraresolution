@@ -113,5 +113,7 @@ public abstract class Utils {
     }
   }
 
-  
+  public static boolean equalsIgnoreCaseTag(TreeNode t, String tag) {
+    return t != null && getTag(t).equalsIgnoreCase(tag);
+  }
 }

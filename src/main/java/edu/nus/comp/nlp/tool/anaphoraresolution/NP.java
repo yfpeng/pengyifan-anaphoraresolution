@@ -46,9 +46,9 @@ class NP {
   // plumbs.
   private boolean hasNNXsibling = false;
   // index of the sentence where UNIT is localized. 0 based
-  private int sentIdx;
+  private int sentenceIndex;
   // distance between the beginning of the sentence and the first word in UNIT;
-  private int offset;
+  private int wordIndex;
 
   private DefaultMutableTreeNode nodeRepresent = null;
 
@@ -56,14 +56,21 @@ class NP {
   List<TagWord> tagWords = Lists.newArrayList();
 
   NP(int sIdx, int offset) {
-    this.sentIdx = sIdx;
-    this.offset = offset;
+    this.sentenceIndex = sIdx;
+    this.wordIndex = offset;
   }
 
-  NP(int sIdx, int offset, String annotatedNP) {
-    this.sentIdx = sIdx;
-    this.offset = offset;
-    tagWords.addAll(Utils.parseTagWordPairs(annotatedNP, sIdx));
+  private NP(int sentenceIndex, int wordIndex, String annotatedNP) {
+    this.sentenceIndex = sentenceIndex;
+    this.wordIndex = wordIndex;
+    tagWords.addAll(Utils.parseTagWordPairs(annotatedNP, sentenceIndex));
+    setSlots();
+  }
+  
+  NP(TagWord tagWord) {
+    this.sentenceIndex = tagWord.getSentenceIndex();
+    this.wordIndex = tagWord.getWordIndex();
+    tagWords = Lists.newArrayList(tagWord);
     setSlots();
   }
 
@@ -147,11 +154,11 @@ class NP {
   }
 
   public int getSentenceIdx() {
-    return this.sentIdx;
+    return this.sentenceIndex;
   }
 
   public int getOffset() {
-    return this.offset;
+    return this.wordIndex;
   }
 
   boolean contains(NP np) {
@@ -272,7 +279,7 @@ class NP {
   }
 
   public String toString() {
-    return sentIdx + "," + offset + "," + type + ","
+    return sentenceIndex + "," + wordIndex + "," + type + ","
         + ",EX "
         + this.existential
         + ",SUB "
