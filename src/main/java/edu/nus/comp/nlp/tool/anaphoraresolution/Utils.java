@@ -116,4 +116,8 @@ public abstract class Utils {
   public static boolean equalsIgnoreCaseTag(TreeNode t, String tag) {
     return t != null && getTag(t).equalsIgnoreCase(tag);
   }
+  
+  public static boolean startWithTag(TreeNode t, String prefix) {
+    return t != null && getTag(t).startsWith(prefix);
+  }
 }

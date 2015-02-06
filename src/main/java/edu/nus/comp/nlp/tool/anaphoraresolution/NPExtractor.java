@@ -45,8 +45,6 @@ public class NPExtractor {
 
       if (tagWd.getTag().startsWith("N")
           || tagWd.getTag().startsWith("PRP")) {
-        // NP aNP = new NP(tagWd.getSentenceIndex(), tagWd.getWordIndex(),
-        // "(" + tagWd.getTag() + " " + tagWd.getWord() + ")");
         extractNP(node);
       } else if (tagWd.getTag().equalsIgnoreCase("PP")) {
         setPPHead(node);
@@ -58,17 +56,17 @@ public class NPExtractor {
 
   private void extractNP(DefaultMutableTreeNode node) {
     TagWord tagWd = Utils.getTagWord(node);
-    NP aNP = new NP(tagWd);
+    NP np = new NP(tagWd);
 
     DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.
         getParent();
-    String parentTag = ((TagWord) (parentNode).getUserObject()).getTag();
+    String parentTag = Utils.getTag(parentNode);
 
     /**********************************************************/
     // set 'Subject' true if it's a child of a unit tagged as "S"
 
     if (parentTag.equals("S")) {
-      aNP.setSubject(true);
+      np.setSubject(true);
     }
 
     /**********************************************************/
@@ -77,12 +75,11 @@ public class NPExtractor {
     // tagging as 'EX'
     if (parentTag.equalsIgnoreCase("VP") && parentNode.getIndex(node) == 1) {
       // object (second child) of a VP
-      DefaultMutableTreeNode parentSibNode =
-          (DefaultMutableTreeNode) parentNode.getPreviousSibling();
+      TreeNode parentSibNode = parentNode.getPreviousSibling();
       if (Utils.equalsIgnoreCaseTag(parentSibNode, "NP")) {
         // preceeding sibling is a NP
         if (Utils.equalsIgnoreCaseTag(parentSibNode.getChildAt(0), "EX")) {
-          aNP.setExistential(true);
+          np.setExistential(true);
         }
       }
     }
@@ -99,40 +96,28 @@ public class NPExtractor {
      */
     if (parentTag.equalsIgnoreCase("VP")) {
       if (parentNode.getIndex(node) == 1) {
-
         // object (second child) of a VP
-        DefaultMutableTreeNode nextSib = (DefaultMutableTreeNode) node.
-            getNextSibling();
-
-        if ((nextSib != null) &&
-            ((TagWord) nextSib.getUserObject()).getTag().
-                equalsIgnoreCase("NP")) {
+        if (Utils.equalsIgnoreCaseTag(node.getNextSibling(), "NP")) {
           // eg.give HIM a book
-          aNP.setIndirectObj(true);
-        }
-        else {
+          np.setIndirectObj(true);
+        } else {
           // eg. kick him
-          aNP.setDirectObj(true);
+          np.setDirectObj(true);
         }
-
-      }
-      else {
+      } else {
         // not the first NP child of the VP
-        aNP.setDirectObj(true);
+        np.setDirectObj(true);
       }
     }
 
     /**********************************************************/
     // set head
     // for a NP, set the rightmost N* as the head,even it's not a leaf
-    DefaultMutableTreeNode h = findFirstChildNode(
-        node,
-        "N",
-        -1,
-        true); // for
-    // 'NP'
+    // for "NP"
+    TreeNode h = findFirstChildNode(node, "N", -1, true);
     if (h == null) {
-      h = findFirstChildNode(node, "PRP", -1, false); // for "PRP"
+      // for "PRP"
+      h = findFirstChildNode(node, "PRP", -1, false);
     }
     if (h != null) {
       tagWd.setHead(h);
@@ -144,10 +129,8 @@ public class NPExtractor {
       @SuppressWarnings("rawtypes")
       Enumeration emu = node.children();
       while (emu.hasMoreElements()) {
-        DefaultMutableTreeNode hPeople = (DefaultMutableTreeNode) emu
-            .nextElement();
-        TagWord hPTw = (TagWord) hPeople.getUserObject();
-        if (!(hPTw).getTag().equalsIgnoreCase("NNP")) {
+        TreeNode hPeople = (TreeNode) emu.nextElement();
+        if (!Utils.equalsIgnoreCaseTag(hPeople, "NNP")) {
           allNNP = false;
           break;
         }
@@ -156,7 +139,7 @@ public class NPExtractor {
       while (allNNP && emu.hasMoreElements()) {
         DefaultMutableTreeNode hPeople = (DefaultMutableTreeNode) emu
             .nextElement();
-        TagWord hPTw = (TagWord) hPeople.getUserObject();
+        TagWord hPTw = Utils.getTagWord(hPeople);
         // lable the first name, if there is one, as the head of a NP
         // representing a people
         if (HumanList.isFemale(hPTw.getText())
@@ -172,20 +155,11 @@ public class NPExtractor {
     // argument domain
     // We consider NP and the NP in it's sibling VP. Lets say
     // case 1 NP, find the NP contained in it's sibling VP
-    DefaultMutableTreeNode argH = findFirstChildNode(
-        parentNode,
-        "VP",
-        1,
-        false);
+    TreeNode argH = findFirstChildNode(parentNode, "VP", 1, false);
     if (argH != null) {
       tagWd.setArgumentHead(argH);
-      while (((TagWord) argH.getUserObject()).getTag().equalsIgnoreCase(
-          "VP")) {
-        DefaultMutableTreeNode tmp = findFirstChildNode(
-            argH,
-            "VP",
-            1,
-            false);
+      while (Utils.equalsIgnoreCaseTag(argH, "VP")) {
+        TreeNode tmp = findFirstChildNode(argH, "VP", 1, false);
         if (tmp == null) {
           break;
         }
@@ -215,27 +189,19 @@ public class NPExtractor {
     /**********************************************************/
     // connect with adjunctHost : the NP whose adjunct domain is NP in
     if (parentTag.startsWith("PP")) {
-      DefaultMutableTreeNode grandParentNode = (DefaultMutableTreeNode) parentNode
-          .getParent();
-      if (grandParentNode.getUserObject() != null) {
-        if (((TagWord) grandParentNode.getUserObject()).getTag()
-            .startsWith("VP")) {
-          argH = findFirstChildNode(
-              (DefaultMutableTreeNode) grandParentNode.
-                  getParent(),
-              "NP",
-              1, false);
-          if (argH != null) {
-            tagWd.setAdjunctHost(argH);
-          }
+      TreeNode grandParentNode = parentNode.getParent();
+      if (Utils.startWithTag(grandParentNode, "VP")) {
+        argH = findFirstChildNode(grandParentNode.getParent(), "NP", 1, false);
+        if (argH != null) {
+          tagWd.setAdjunctHost(argH);
         }
       }
     }
 
     /**********************************************************/
     // connect with containHost: the NP containing this NP
-    DefaultMutableTreeNode argadjNode = null;
-    if ((argadjNode = tagWd.getArgumentHead()) != null) {
+    TreeNode argadjNode = tagWd.getArgumentHead();
+    if (argadjNode != null) {
       tagWd.setContainHost(argadjNode);
     } else {
       // deepest ancestorNode NP and its containHosts and the deepest VP
@@ -248,14 +214,9 @@ public class NPExtractor {
         if (pNode.getUserObject() == null) {
           break;
         }
-        if ((!gotNP)
-            && ((TagWord) pNode.getUserObject()).getTag()
-                .startsWith("NP")) {
-          tagWd.setContainHost(((TagWord) pNode.getUserObject())
-              .getContainHost());
-        } else if ((!gotVP)
-            && ((TagWord) pNode.getUserObject()).getTag()
-                .startsWith("VP")) {
+        if (!gotNP && Utils.startWithTag(pNode, "NP")) {
+          tagWd.setContainHost(Utils.getTagWord(pNode).getContainHost());
+        } else if (!gotVP && Utils.startWithTag(pNode, "VP")) {
           tagWd.setContainHost(pNode);
         }
         if (gotNP && gotVP) {
@@ -263,41 +224,30 @@ public class NPExtractor {
         }
         pNode = (DefaultMutableTreeNode) pNode.getParent();
       }
-
     }
 
     /**********************************************************/
     // connect with NPDomainHost: the NP whose domain this NP is in
     if (parentTag.startsWith("PP")) {
-      DefaultMutableTreeNode previousSiblingNodeOfParent = parentNode
-          .getPreviousSibling();
-
+      TreeNode previousSiblingNodeOfParent = parentNode.getPreviousSibling();
       if (previousSiblingNodeOfParent != null
-          && previousSiblingNodeOfParent.getUserObject() != null) {
-        if (((TagWord) previousSiblingNodeOfParent.getUserObject())
-            .getTag().startsWith("NP")) {
-          if (previousSiblingNodeOfParent.getChildCount() > 1) {
-            DefaultMutableTreeNode firstCousin = (DefaultMutableTreeNode) previousSiblingNodeOfParent
-                .getChildAt(0);
-            DefaultMutableTreeNode secondCousin = (DefaultMutableTreeNode) previousSiblingNodeOfParent
-                .getChildAt(1);
-            if (((TagWord) firstCousin.getUserObject()).getTag()
-                .startsWith("NP")
-                && ((TagWord) secondCousin.getUserObject()).getTag()
-                    .startsWith("N")) {
-              if (!firstCousin.isLeaf()) {
-                DefaultMutableTreeNode posNode = findFirstChildNode(
-                    firstCousin,
-                    "POS",
-                    1, false);
-                if (posNode != null) {
-                  tagWd.setNPDomainHost((DefaultMutableTreeNode) posNode
-                      .getPreviousSibling());
-                }
-              }
-            }
+          && Utils.startWithTag(previousSiblingNodeOfParent, "NP")
+          && previousSiblingNodeOfParent.getChildCount() > 1) {
+        TreeNode firstCousin = previousSiblingNodeOfParent.getChildAt(0);
+        TreeNode secondCousin = previousSiblingNodeOfParent.getChildAt(1);
+        if (Utils.startWithTag(firstCousin, "NP")
+            && Utils.startWithTag(secondCousin, "N")
+            && !firstCousin.isLeaf()) {
+          TreeNode posNode = findFirstChildNode(
+              firstCousin,
+              "POS",
+              1,
+              false);
+          if (posNode != null) {
+            tagWd.setNPDomainHost(
+                (DefaultMutableTreeNode) ((DefaultMutableTreeNode) posNode)
+                    .getPreviousSibling());
           }
-
         }
       }
     }
@@ -326,37 +276,25 @@ public class NPExtractor {
     // has a sibling with similar tag
     if (tagWd.getTag().startsWith("NN")) {
       DefaultMutableTreeNode siblingNode = node.getPreviousSibling();
-      if (siblingNode != null) {
-        if (((TagWord) siblingNode.getUserObject()).getTag().startsWith(
-            "NN")) {
-          aNP.setHasNNXsibling(true);
-        }
+      if (Utils.startWithTag(siblingNode, "NN")) {
+        np.setHasNNXsibling(true);
       }
-
       siblingNode = node.getNextSibling();
-      if (siblingNode != null) {
-        if (((TagWord) siblingNode.getUserObject()).getTag().startsWith(
-            "NN")) {
-          aNP.setHasNNXsibling(true);
-        }
+      if (Utils.startWithTag(siblingNode, "NN")) {
+        np.setHasNNXsibling(true);
       }
     }
 
     /**********************************************************/
     // First try to set number of the NP, based on the head of the VP
     // related
-    DefaultMutableTreeNode siblingVPNode = findFirstChildNode(
-        parentNode,
-        "VP",
-        1, false);
+    TreeNode siblingVPNode = findFirstChildNode(parentNode, "VP", 1, false);
     if (siblingVPNode != null) {
-      DefaultMutableTreeNode vpHead = ((TagWord) siblingVPNode
-          .getUserObject()).getHead();
+      TreeNode vpHead = Utils.getTagWord(siblingVPNode).getHead();
       if (vpHead != null) {
-        String siblingVPHeadTw = ((TagWord) vpHead.getUserObject())
-            .getTag();
+        String siblingVPHeadTw = Utils.getTag(vpHead);
         if (siblingVPHeadTw.startsWith("AUX")) {
-
+          ;
         } else if (siblingVPHeadTw.endsWith("VBP")) {
           tagWd.setNumber(Number.PLURAL);
         } else if (siblingVPHeadTw.endsWith("VBZ")) {
@@ -371,11 +309,11 @@ public class NPExtractor {
     tagWd.setHasNPAncestor(hasNPAncestor);
 
     boolean hasADVPAncestor = hasAncestor(node, "ADVP");
-    aNP.setIsInADVP(hasADVPAncestor);
+    np.setIsInADVP(hasADVPAncestor);
 
-    aNP.setNodeRepresent(node);
-    aNP.setHead(tagWd.isHeadNP());
-    tagWd.setNP(aNP);
+    np.setNodeRepresent(node);
+    np.setHead(tagWd.isHeadNP());
+    tagWd.setNP(np);
 
     if (tagWd.getTag().startsWith("PRP")) {
       // for (NP (PRP xxx))
@@ -383,8 +321,7 @@ public class NPExtractor {
       // siblings
       if (parentTag.startsWith("NP")
           && node.getSiblingCount() == 1) {
-        TagWord parentTw = (TagWord) parentNode.getUserObject();
-
+        TagWord parentTw = Utils.getTagWord(parentNode);
         tagWd.setAdjunctHost(parentTw.getAdjunctHost());
         tagWd.setArgumentHead(parentTw.getArgumentHead());
         tagWd.setArgumentHost(parentTw.getArgumentHost());
@@ -406,7 +343,7 @@ public class NPExtractor {
   private void setPPHead(TreeNode node) {
     // set head
     // for 'NP'
-    DefaultMutableTreeNode h = findFirstChildNode(node, "N", -1, false);
+    TreeNode h = findFirstChildNode(node, "N", -1, false);
     if (h == null) {
       // for "PRP"
       h = findFirstChildNode(node, "PR", -1, false);
@@ -420,7 +357,7 @@ public class NPExtractor {
   private void setVPHead(TreeNode node) {
     // set head
     // for 'V'
-    DefaultMutableTreeNode h = findFirstChildNode(node, "V", 1, false);
+    TreeNode h = findFirstChildNode(node, "V", 1, false);
     if (h == null) {
       // for "PRP"
       h = findFirstChildNode(node, "AU", 1, false);
@@ -451,7 +388,7 @@ public class NPExtractor {
    *          matches the requirement is found
    * @return the first child from left(+1)/right(-1) that satisfies taghead
    */
-  private DefaultMutableTreeNode findFirstChildNode(
+  private TreeNode findFirstChildNode(
       TreeNode parentNode, String taghead, int direction,
       boolean recursive) {
     if (parentNode.isLeaf()) {
