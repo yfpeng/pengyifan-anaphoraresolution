@@ -99,7 +99,7 @@ public class NPExtractor {
         // object (second child) of a VP
         if (Utils.equalsIgnoreCaseTag(node.getNextSibling(), "NP")) {
           // eg.give HIM a book
-          np.setIndirectObj(true);
+          np.setDirectObj(false);
         } else {
           // eg. kick him
           np.setDirectObj(true);

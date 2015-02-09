@@ -225,16 +225,15 @@ public class TagWord {
     if (number != Number.UNCLEAR) {
       return number;
     }
-    if (np.tagWords.size() == 1) {
-      String tag = np.tagWords.get(0).getTag();
-      if (tag.endsWith("S")) { // NNS, NPS
-        number = Number.PLURAL;
-      } else if (HumanList.isPlural(getText())) {
-        number = Number.PLURAL;
-      } else {
-        number = Number.SINGLE;
-      }
-    } else if (np.hasAnd()) {
+    String tag = np.getTagWord().getTag();
+    if (tag.endsWith("S")) { // NNS, NPS
+      number = Number.PLURAL;
+    } else if (HumanList.isPlural(getText())) {
+      number = Number.PLURAL;
+    } else {
+      number = Number.SINGLE;
+    }
+    if (np.hasAnd()) {
       number = Number.PLURAL;
     } else if (head != null) {
       number = Utils.getTagWord(head).getNumber();

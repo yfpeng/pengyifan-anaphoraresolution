@@ -16,11 +16,9 @@
 
 package edu.nus.comp.nlp.tool.anaphoraresolution;
 
-import java.util.*;
+import java.util.Enumeration;
 
-import javax.swing.tree.*;
-
-import com.google.common.collect.Lists;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  * @author Qiu Long
@@ -34,11 +32,10 @@ class NP {
   public final static int PRON = 3; // other pronoun;
   public final static int INDEF = 4; // indefinite NP;
   // type of the Unit;
-  private int type = NP.INDEF;
+  final private int type;
   private boolean existential = false;
-  private boolean subject = false;
+  private boolean isSubject = false;
   private boolean directObj = false;
-  private boolean indirectObj = false;
   private boolean isHead = false;
   private boolean isInADVP = false;
   // Indicates whether this NP is part of a "NNX (NNX)+" combination
@@ -53,112 +50,17 @@ class NP {
   private DefaultMutableTreeNode nodeRepresent = null;
 
   // containing instances of TagWord
-  List<TagWord> tagWords = Lists.newArrayList();
+  private final TagWord tagWord;
 
-  NP(int sIdx, int offset) {
-    this.sentenceIndex = sIdx;
-    this.wordIndex = offset;
-  }
-
-  private NP(int sentenceIndex, int wordIndex, String annotatedNP) {
-    this.sentenceIndex = sentenceIndex;
-    this.wordIndex = wordIndex;
-    tagWords.addAll(Utils.parseTagWordPairs(annotatedNP, sentenceIndex));
-    setSlots();
-  }
-  
   NP(TagWord tagWord) {
     this.sentenceIndex = tagWord.getSentenceIndex();
     this.wordIndex = tagWord.getWordIndex();
-    tagWords = Lists.newArrayList(tagWord);
-    setSlots();
-  }
-
-  public void setSubject(boolean b) {
-    this.subject = b;
-  }
-
-  public boolean isSubject() {
-    return subject;
-  }
-
-  public void setExistential(boolean b) {
-    this.existential = b;
-  }
-
-  public boolean isExistential() {
-    return existential;
-  }
-
-  /**
-   * setting the type
-   * */
-  public void setType(int ty) {
-    this.type = ty;
-  }
-
-  public void setDirectObj(boolean b) {
-    this.directObj = b;
-    this.indirectObj = !b;
-  }
-
-  public boolean isDirectObj() {
-    return directObj;
-  }
-
-  public void setIndirectObj(boolean b) {
-    this.directObj = !b;
-    this.indirectObj = b;
-  }
-
-  public boolean isIndirectObj() {
-    return indirectObj;
-  }
-
-  public void setHasNNXsibling(boolean b) {
-    hasNNXsibling = b;
-  }
-
-  public void setHead(boolean b) {
-    this.isHead = b;
-    /*
-     * if(!b){ System.out.println(this.toDisplay()); }else{
-     * System.out.println("\t"+this.toDisplay()); }
-     */
-  }
-
-  public boolean isHead() {
-    return this.isHead;
-  }
-
-  private void setSlots() {
-    setType();
-  }
-
-  private void setType() {
-    switch (tagWords.size()) {
-    case 1:
-      TagWord aTagWord = tagWords.get(0);
-      String tag = aTagWord.getTag();
-      if (tag.startsWith("PRP")) {
-        this.type = NP.PRON;
-      }
-      break;
-    default:
-      break;
+    this.tagWord = tagWord;
+    if (tagWord.getTag().startsWith("PRP")) {
+      type = NP.PRON;
+    } else {
+      type = NP.INDEF;
     }
-  }
-
-  public int getType() {
-    return this.type;
-  }
-
-  public int getSentenceIdx() {
-    return this.sentenceIndex;
-  }
-
-  public int getOffset() {
-    return this.wordIndex;
   }
 
   boolean contains(NP np) {
@@ -173,66 +75,6 @@ class NP {
      */
   }
 
-  public boolean isPRP() {
-    if (tagWords.size() != 1) {
-      return false;
-    } else if (tagWords.get(0).getTag().startsWith("PRP")) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public boolean isReflexive() {
-    return isPRP() && tagWords.get(0).getText().indexOf("sel") > 0;
-  }
-
-  /**
-   * @return true if there is a "CC and" in children
-   */
-  boolean hasAnd() {
-    @SuppressWarnings("rawtypes")
-    Enumeration enumer = getNodeRepresent().children();
-    while (enumer.hasMoreElements()) {
-      DefaultMutableTreeNode aChild = (DefaultMutableTreeNode) enumer
-          .nextElement();
-      if (((TagWord) aChild.getUserObject()).getTag().equals("CC")) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public void setNodeRepresent(DefaultMutableTreeNode t) {
-    // as it's stored in the tree
-    nodeRepresent = t;
-  }
-
-  public DefaultMutableTreeNode getNodeRepresent() {
-    return this.nodeRepresent;
-  }
-
-  int getSalience(NP otherNP) {
-    return this.getSentenceIdx() == otherNP.getSentenceIdx() ?
-        getFixedSalience() + 100
-        : getFixedSalience();
-  }
-
-  /**
-   * merge all salience factors true for palNP, salience factors for palNP
-   * remain unchanged where palNP is in the same co-reference chain as this NP.
-   * 
-   * @param palNP
-   */
-  void mergeSalience(NP palNP) {
-    subject |= palNP.subject;
-    existential |= palNP.existential;
-    directObj |= palNP.directObj;
-    indirectObj |= palNP.indirectObj;
-    isHead |= palNP.isHead;
-    isInADVP |= palNP.isInADVP;
-  }
-
   private int getFixedSalience() {
     int fSalience = 0;
     // 6 of the 7 salience factors are considered here: (sentence recency is
@@ -243,7 +85,7 @@ class NP {
     // Indirect object emphasis
     // Head noun emphasis
     // Non-adverbial emphasis
-    if (subject) {
+    if (isSubject) {
       fSalience += 80;
     }
 
@@ -253,10 +95,8 @@ class NP {
 
     if (directObj) {
       fSalience += 50;
-    }
-
-    if (indirectObj) {
-      fSalience += 40;
+    } else {
+      fSalience += 90;
     }
 
     if (isHead) {
@@ -274,8 +114,113 @@ class NP {
     return fSalience;
   }
 
+  public DefaultMutableTreeNode getNodeRepresent() {
+    return this.nodeRepresent;
+  }
+
+  public int getOffset() {
+    return this.wordIndex;
+  }
+
+  int getSalience(NP otherNP) {
+    return this.getSentenceIdx() == otherNP.getSentenceIdx() ?
+        getFixedSalience() + 100
+        : getFixedSalience();
+  }
+
+  public int getSentenceIdx() {
+    return this.sentenceIndex;
+  }
+
+  public int getType() {
+    return this.type;
+  }
+
+  /**
+   * @return true if there is a "CC and" in children
+   */
+  public boolean hasAnd() {
+    @SuppressWarnings("rawtypes")
+    Enumeration enumer = getNodeRepresent().children();
+    while (enumer.hasMoreElements()) {
+      DefaultMutableTreeNode aChild = (DefaultMutableTreeNode) enumer
+          .nextElement();
+      if (((TagWord) aChild.getUserObject()).getTag().equals("CC")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean isDirectObj() {
+    return directObj;
+  }
+
+  public boolean isExistential() {
+    return existential;
+  }
+
+  public boolean isHead() {
+    return this.isHead;
+  }
+
+  public boolean isPRP() {
+    return type == PRON;
+  }
+
+  public boolean isReflexive() {
+    return isPRP() && tagWord.getText().indexOf("sel") > 0;
+  }
+
+  public boolean isSubject() {
+    return isSubject;
+  }
+
+  /**
+   * merge all salience factors true for palNP, salience factors for palNP
+   * remain unchanged where palNP is in the same co-reference chain as this NP.
+   * 
+   * @param palNP
+   */
+  void mergeSalience(NP palNP) {
+    isSubject |= palNP.isSubject;
+    existential |= palNP.existential;
+    directObj |= palNP.directObj;
+    isHead |= palNP.isHead;
+    isInADVP |= palNP.isInADVP;
+  }
+
+  public void setDirectObj(boolean b) {
+    this.directObj = b;
+  }
+
+  public void setExistential(boolean b) {
+    this.existential = b;
+  }
+
+  public void setHasNNXsibling(boolean b) {
+    hasNNXsibling = b;
+  }
+
+  public void setHead(boolean b) {
+    this.isHead = b;
+    /*
+     * if(!b){ System.out.println(this.toDisplay()); }else{
+     * System.out.println("\t"+this.toDisplay()); }
+     */
+  }
+
   public void setIsInADVP(boolean b) {
     isInADVP = b;
+  }
+
+  public void setNodeRepresent(DefaultMutableTreeNode t) {
+    // as it's stored in the tree
+    nodeRepresent = t;
+  }
+
+  public void setSubject(boolean isSubject) {
+    this.isSubject = isSubject;
   }
 
   public String toString() {
@@ -283,15 +228,17 @@ class NP {
         + ",EX "
         + this.existential
         + ",SUB "
-        + this.subject
+        + this.isSubject
         + ",DOBJ "
         + this.directObj
-        + ",INDOBJ "
-        + this.indirectObj
         + ",isHEAD "
         + this.isHead
         + ",SAL <"
         + getFixedSalience()
         + ">";
+  }
+
+  public TagWord getTagWord() {
+    return tagWord;
   }
 }
