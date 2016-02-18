@@ -1,5 +1,6 @@
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
+import java.lang.*;
 import java.util.Enumeration;
 import java.util.List;
 

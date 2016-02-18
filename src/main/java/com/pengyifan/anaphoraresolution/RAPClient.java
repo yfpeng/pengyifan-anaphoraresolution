@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-import edu.nus.comp.nlp.tool.anaphoraresolution.AnaphoraResolver;
-import edu.nus.comp.nlp.tool.anaphoraresolution.AnnotatedText;
-import edu.nus.comp.nlp.tool.anaphoraresolution.CorreferencialPair;
+import com.pengyifan.nlp.process.anaphoraresolution.AnaphoraResolver;
+import com.pengyifan.nlp.process.anaphoraresolution.AnnotatedText;
+import com.pengyifan.nlp.process.anaphoraresolution.CorreferencialPair;
 
 public class RAPClient {
 

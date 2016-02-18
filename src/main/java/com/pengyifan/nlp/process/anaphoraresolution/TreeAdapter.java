@@ -1,4 +1,4 @@
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

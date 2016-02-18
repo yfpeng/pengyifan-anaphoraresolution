@@ -22,8 +22,9 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
+import java.lang.*;
 import java.util.Arrays;
 import java.util.List;
 

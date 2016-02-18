@@ -21,7 +21,7 @@
  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
 import java.util.Comparator;
 

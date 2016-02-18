@@ -1,4 +1,4 @@
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
 import java.util.Collections;
 import java.util.List;
@@ -8,7 +8,7 @@ import javax.swing.tree.TreeNode;
 
 import com.google.common.collect.Lists;
 
-import edu.nus.comp.nlp.tool.anaphoraresolution.TreeAdapter.TagWordAnnotation;
+import com.pengyifan.nlp.process.anaphoraresolution.TreeAdapter.TagWordAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.trees.Tree;
 
