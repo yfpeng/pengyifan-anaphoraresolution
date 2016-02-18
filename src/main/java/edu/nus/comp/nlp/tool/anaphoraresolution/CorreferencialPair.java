@@ -32,14 +32,12 @@ public class CorreferencialPair {
     String refereeStr = null;
     if (referee == null) {
       refereeStr = "NULL";
+    } else if (System.getProperty("referenceChain").equals("false")) {
+      // true/undefined by default
+      refereeStr = referee.toStringBrief();
     } else {
-      if (System.getProperty("referenceChain").equals("false")) {
-        // true/undefined by default
-        refereeStr = referee.toStringBrief();
-      } else {
-        // bind to the earliest NP
-        refereeStr = referee.getAntecedent().toStringBrief();
-      }
+      // bind to the earliest NP
+      refereeStr = referee.getAntecedent().toStringBrief();
     }
     String refererStr = referer.toStringBrief();
     return refereeStr + " <-- " + refererStr;
