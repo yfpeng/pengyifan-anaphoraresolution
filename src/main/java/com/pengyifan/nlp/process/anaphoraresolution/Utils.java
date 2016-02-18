@@ -1,33 +1,29 @@
 package com.pengyifan.nlp.process.anaphoraresolution;
 
-import java.util.Collections;
-import java.util.List;
+import com.google.common.collect.Lists;
+import edu.stanford.nlp.trees.Tree;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
-
-import com.google.common.collect.Lists;
-
-import com.pengyifan.nlp.process.anaphoraresolution.TreeAdapter.TagWordAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.trees.Tree;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class Utils {
 
   /**
    * Parse the all (TAG word sentenceIndex charOffset)s in a string. For
    * example,
-   * 
+   * <p>
    * <pre>
-   * (S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that) 
+   * (S1 (S (S (NP (PRP We)) (VP (VBD demonstrated) (SBAR (IN that)
    * (S (NP (NN katX)) ...
    * </pre>
-   * 
+   * <p>
    * Returns
-   * 
+   * <p>
    * </pre> (PRP We ? 18) (VBD demonstrated ? 33) (IN that ? 57) (NN katX ? 74)
    * ... </pre>
-   * 
+   *
    * @param s
    * @param sentenceIndex
    * @return
@@ -69,20 +65,10 @@ public abstract class Utils {
     return tags;
   }
 
-  @Deprecated
-  public static TagWord getTagWord(Tree t) {
-    return ((CoreLabel) t.label()).get(TagWordAnnotation.class);
-  }
-
-  @Deprecated
-  public static String getTag(Tree t) {
-    return getTagWord(t).getTag();
-  }
-
   public static String getTag(TreeNode t) {
     return getTagWord(t).getTag();
   }
-  
+
   public static String getText(TreeNode t) {
     return getTagWord(t).getText();
   }
@@ -116,7 +102,7 @@ public abstract class Utils {
   public static boolean equalsIgnoreCaseTag(TreeNode t, String tag) {
     return t != null && getTag(t).equalsIgnoreCase(tag);
   }
-  
+
   public static boolean startWithTag(TreeNode t, String prefix) {
     return t != null && getTag(t).startsWith(prefix);
   }

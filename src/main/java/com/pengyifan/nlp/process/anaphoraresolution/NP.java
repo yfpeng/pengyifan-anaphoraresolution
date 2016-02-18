@@ -33,8 +33,17 @@ class NP {
   public final static int INDEF = 4; // indefinite NP;
   // type of the Unit;
   final private int type;
+
+  /**
+   * Existential clause, such as "There is [a god]"
+   */
   private boolean existential = false;
+
+  /**
+   * This belongs to Subject
+   */
   private boolean isSubject = false;
+
   private boolean directObj = false;
   private boolean isHead = false;
   private boolean isInADVP = false;
