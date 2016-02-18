@@ -21,12 +21,14 @@
  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
+import java.lang.*;
 import java.util.List;
 import java.util.Objects;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 import com.google.common.collect.Lists;
 
@@ -46,23 +48,6 @@ import com.google.common.collect.Lists;
 
 public class TagWord {
 
-  /***
-   * s: (Tag content), where content could be also a combinedStr
-   */
-  public static TagWord parseTagWord(String s, int sentenceIndex,
-      int wordIndex) {
-    String tag = null;
-    String word = null;
-    try {
-      tag = s.substring(s.indexOf("(") + 1, s.indexOf(" "));
-      word = s.substring(s.indexOf(" ") + 1, s.lastIndexOf(")"));
-    } catch (Exception ex) {
-      s = "(-LRB- -LRB-)";// dummy element
-      tag = s.substring(s.indexOf("(") + 1, s.indexOf(" "));
-      word = s.substring(s.indexOf(" ") + 1, s.lastIndexOf(")"));
-    }
-    return new TagWord(tag, word, sentenceIndex, wordIndex);
-  }
   private int sentenceIndex; // indicates sentence
   private int wordIndex;
   private Number number = Number.UNCLEAR;
@@ -75,18 +60,19 @@ public class TagWord {
   private String text;
   private boolean isHeadNP = false;
   private boolean hasNPAncestor = false;
-                                              private DefaultMutableTreeNode head = null; // reference to the head for this
-                                                      // NP
-  private DefaultMutableTreeNode argumentHead = null; // the head as this NP is
-                                                      // augument for
-  private DefaultMutableTreeNode argumentHost = null; // the other np as
+  // reference to the head for this
+  // NP
+  private TreeNode head = null;
+  private TreeNode argumentHead = null; // the head as this NP is
+                                        // augument for
+  private TreeNode argumentHost = null; // the other np as
   // augument for the same
-                                                      // head
-  private DefaultMutableTreeNode adjunctHost = null; // the unit as adjunct for
-  private DefaultMutableTreeNode NPDomainHost = null;
-  private DefaultMutableTreeNode determiner = null;
-  private DefaultMutableTreeNode determinee = null;
-  private List<DefaultMutableTreeNode> containHost = Lists.newArrayList();
+  // head
+  private TreeNode adjunctHost = null; // the unit as adjunct for
+  private TreeNode NPDomainHost = null;
+  private TreeNode determiner = null;
+  private TreeNode determinee = null;
+  private List<TreeNode> containHost = Lists.newArrayList();
   private NP np = null;
 
   private TagWord antecedent = null;
@@ -105,8 +91,8 @@ public class TagWord {
    * amplify sentence index difference by multiply 100
    */
   public int distanceInText(TagWord tw) {
-    return Math.abs(this.getSentenceIndex() - tw.getSentenceIndex()) * 100
-        + Math.abs(this.getWordIndex() - tw.getWordIndex());
+    return Math.abs(getSentenceIndex() - tw.getSentenceIndex()) * 100
+        + Math.abs(getWordIndex() - tw.getWordIndex());
   }
 
   @Override
@@ -131,12 +117,11 @@ public class TagWord {
         && Objects.equals(hasNPAncestor, rhs.hasNPAncestor)
         && Objects.equals(head, rhs.head)
         && Objects.equals(np, rhs.np)
-        && Objects.equals(antecedent, rhs.antecedent)
-        ;
+        && Objects.equals(antecedent, rhs.antecedent);
   }
 
-  public DefaultMutableTreeNode getAdjunctHost() {
-    return this.adjunctHost;
+  public TreeNode getAdjunctHost() {
+    return adjunctHost;
   }
 
   /**
@@ -145,30 +130,26 @@ public class TagWord {
    *         is returned otherwise.
    */
   public TagWord getAntecedent() {
-    if (antecedent == null) {
-      return this;
-    } else {
-      return this.antecedent.getAntecedent();
-    }
+    return antecedent == null ? this : antecedent.getAntecedent();
   }
 
-  public DefaultMutableTreeNode getArgumentHead() {
-    return this.argumentHead;
+  public TreeNode getArgumentHead() {
+    return argumentHead;
   }
 
-  public DefaultMutableTreeNode getArgumentHost() {
-    return this.argumentHost;
+  public TreeNode getArgumentHost() {
+    return argumentHost;
   }
 
-  public java.util.List<DefaultMutableTreeNode> getContainHost() {
-    return this.containHost;
+  public List<TreeNode> getContainHost() {
+    return containHost;
   }
 
-  public DefaultMutableTreeNode getDeterminee() {
+  public TreeNode getDeterminee() {
     return determinee;
   }
 
-  public DefaultMutableTreeNode getDeterminer() {
+  public TreeNode getDeterminer() {
     return determiner;
   }
 
@@ -179,24 +160,17 @@ public class TagWord {
     if (gender != Gender.UNCLEAR) {
       return gender;
     }
-    String h;
-    if (head == null) {
-      h = text; // for prp
-    } else {
-      TagWord tw = (TagWord) head.getUserObject();
-      h = tw.getText();
-    }
-
+    String h = head == null ? text : Utils.getTagWord(head).getText();
     if (HumanList.isMale(h)) {
-      this.gender = Gender.MALE;
+      gender = Gender.MALE;
     } else if (HumanList.isFemale(h)) {
-      this.gender = Gender.FEMALE;
+      gender = Gender.FEMALE;
     }
     return gender;
   }
 
-  public DefaultMutableTreeNode getHead() {
-    return this.head;
+  public TreeNode getHead() {
+    return head;
   }
 
   /**
@@ -228,7 +202,7 @@ public class TagWord {
     }
 
     // If above fails, check the head of this NP
-    h = ((TagWord) head.getUserObject()).getText();
+    h = Utils.getTagWord(head).getText();
     if (HumanList.isHuman(h)) {
       human = Human.HUMAN;
       return human;
@@ -241,41 +215,40 @@ public class TagWord {
   }
 
   public NP getNP() {
-    return this.np;
+    return np;
   }
 
-  public DefaultMutableTreeNode getNPDomainHost() {
-    return this.NPDomainHost;
+  public TreeNode getNPDomainHost() {
+    return NPDomainHost;
   }
 
   public Number getNumber() {
     if (number != Number.UNCLEAR) {
       return number;
     }
-    if (np.tagWords.size() == 1) {
-      String tag = np.tagWords.get(0).getTag();
-      if (tag.endsWith("S")) { // NNS, NPS
-        number = Number.PLURAL;
-      } else if (HumanList.isPlural(getText())) {
-        number = Number.PLURAL;
-      } else {
-        number = Number.SINGLE;
-      }
-    } else if (getNP().hasAnd()) {
+    String tag = np.getTagWord().getTag();
+    if (tag.endsWith("S")) { // NNS, NPS
       number = Number.PLURAL;
-    } else if (this.head != null) {
-      number = ((TagWord) head.getUserObject()).getNumber();
+    } else if (HumanList.isPlural(getText())) {
+      number = Number.PLURAL;
+    } else {
+      number = Number.SINGLE;
     }
-    return this.number;
+    if (np.hasAnd()) {
+      number = Number.PLURAL;
+    } else if (head != null) {
+      number = Utils.getTagWord(head).getNumber();
+    }
+    return number;
   }
 
   public People getPeople() {
     if (people != People.UNCLEAR) {
       return people;
     }
-    if (this.getText().toLowerCase().matches("we|us")) {
+    if (getText().toLowerCase().matches("we|us")) {
       people = People.FIRST;
-    } else if (this.getText().toLowerCase().matches("you")) {
+    } else if (getText().toLowerCase().matches("you")) {
       people = People.SECOND;
     } else {
       people = People.THIRD; // default
@@ -287,12 +260,7 @@ public class TagWord {
     if (people != People.UNCLEAR) {
       return people;
     }
-    String h;
-    if (head == null) {
-      h = text; // for prp,
-    } else {
-      h = ((TagWord) head.getUserObject()).getText();
-    }
+    String h = (head == null) ? text : Utils.getTagWord(head).getText();
 
     if (HumanList.isThirdPerson(h)) {
       people = People.THIRD;
@@ -313,18 +281,16 @@ public class TagWord {
   public int getSalience(NP npAlien) {
 
     int sal = 0;
-    NP np = this.getNP();
     if ((np != null) && (npAlien != null)) {
       sal = np.getSalience(npAlien);
     }
     // dampen the salience as distance increases
-    sal = sal
-        / (Math.abs(this.getSentenceIndex() - npAlien.getSentenceIdx()) + 1);
+    sal = sal / (Math.abs(getSentenceIndex() - npAlien.getSentenceIdx()) + 1);
 
     // penalize cataphora (if this appears after npAlien)
-    if ((this.getSentenceIndex() == npAlien.getSentenceIdx()
-        && this.getNP().getOffset() > npAlien.getOffset())
-        || this.getSentenceIndex() > npAlien.getSentenceIdx()) {
+    if ((getSentenceIndex() == npAlien.getSentenceIdx()
+        && np.getOffset() > npAlien.getOffset())
+        || getSentenceIndex() > npAlien.getSentenceIdx()) {
       sal = sal / 4; // reduce the weight substantially
     }
     return sal;
@@ -339,7 +305,7 @@ public class TagWord {
   }
 
   public String getTag() {
-    return this.tag;
+    return tag;
   }
 
   public String getText() {
@@ -347,11 +313,11 @@ public class TagWord {
   }
 
   public int getTmpSalience() {
-    return this.tmpSalience;
+    return tmpSalience;
   }
 
   public String getWord() {
-    return this.text;
+    return text;
   }
 
   /**
@@ -400,11 +366,11 @@ public class TagWord {
   }
 
   public boolean isPleonastic() {
-    return this.pleonastic;
+    return pleonastic;
   }
 
   public boolean isPRP() {
-    return this.getNP().isPRP();
+    return np.isPRP();
   }
 
   /**
@@ -418,71 +384,68 @@ public class TagWord {
     // (coreferencial chain)
     // In fact: accumulate salience factors in the chain, a member in the chain
     // has all the factors processed by the leading members
-
-    NP np = this.getNP();
     NP npGuest = tw.getNP();
-
     if (np != null && npGuest != null) {
       np.mergeSalience(npGuest);
     }
   }
 
-  public void setAdjunctHost(DefaultMutableTreeNode n) {
-    this.adjunctHost = n;
+  public void setAdjunctHost(TreeNode adjunctHost) {
+    this.adjunctHost = adjunctHost;
   }
 
-  public void setAntecedent(TagWord ant) {
-    if (ant.getAntecedent() == this) {
+  public void setAntecedent(TagWord antecedent) {
+    if (antecedent.getAntecedent() == this) {
       return;
     }
-    antecedent = ant;
+    this.antecedent = antecedent;
   }
 
-  public void setArgumentHead(DefaultMutableTreeNode n) {
-    this.argumentHead = n;
+  public void setArgumentHead(TreeNode argumentHead) {
+    this.argumentHead = argumentHead;
   }
 
   /**
    * @param argumentHost: the NP in the same argument domain
    */
-  public void setArgumentHost(DefaultMutableTreeNode n) {
-    this.argumentHost = n;
+  public void setArgumentHost(TreeNode argumentHost) {
+    this.argumentHost = argumentHost;
   }
 
-  public void setContainHost(DefaultMutableTreeNode n) {
+  public void setContainHost(TreeNode n) {
     this.containHost.add(n);
   }
 
-  public void setContainHost(List<DefaultMutableTreeNode> n) {
-    this.containHost.addAll(n);
+  public void setContainHost(List<TreeNode> n) {
+    containHost.addAll(n);
   }
 
-  public void setDeterminee(DefaultMutableTreeNode n) {
-    determinee = n;
+  public void setDeterminee(DefaultMutableTreeNode determinee) {
+    this.determinee = determinee;
   }
 
-  public void setDeterminer(DefaultMutableTreeNode n) {
-    determiner = n;
+  public void setDeterminer(DefaultMutableTreeNode determiner) {
+    this.determiner = determiner;
   }
 
-  public void setHasNPAncestor(boolean b) {
-    hasNPAncestor = b;
+  public void setHasNPAncestor(boolean hasNPAncestor) {
+    this.hasNPAncestor = hasNPAncestor;
   }
 
-  public void setHead(DefaultMutableTreeNode n) {
-    if (this.number != Number.UNCLEAR) {
+  public void setHead(TreeNode n) {
+    if (number != Number.UNCLEAR) {
       // number should be set afterword
       System.err.println("Number shouldn't be set before setHead.");
     }
-    this.head = n;
+    head = n;
   }
 
   public void setNP(NP np) {
     this.np = np;
   }
 
-  public void setNPDomainHost(DefaultMutableTreeNode n) {
-    this.NPDomainHost = n;
+  public void setNPDomainHost(TreeNode NPDomainHost) {
+    this.NPDomainHost = NPDomainHost;
   }
 
   public void setNumber(Number number) {
@@ -492,75 +455,59 @@ public class TagWord {
   public void setPeople(People people) {
     this.people = people;
   }
-  
-  public void setPleonastic(boolean b) {
-    this.pleonastic = b;
+
+  public void setPleonastic(boolean pleonastic) {
+    this.pleonastic = pleonastic;
   }
 
-  public void setTmpSalience(int s) {
-    this.tmpSalience = s;
+  public void setTmpSalience(int tmpSalience) {
+    this.tmpSalience = tmpSalience;
   }
 
   public void setWordIndex(int wordIndex) {
     this.wordIndex = wordIndex;
   }
 
+  private String getString(String tag, TreeNode treeNode) {
+    if (treeNode == null) {
+      return " NULL";
+    } else {
+      return " (" + tag + " " + Utils.getTagWord(adjunctHost).getText() + ")";
+    }
+  }
+
   public String toString() {
     String localhead = " NULL";
     if (head != null) {
-      localhead = ((TagWord) (head.getUserObject())).getText();
+      localhead = Utils.getTagWord(head).getText();
     }
 
-    String argHStr = " NULL";
-    if (this.argumentHost != null) {
-      argHStr = " (ARG " +
-          ((TagWord) (this.argumentHost.getUserObject())).getText() + ")";
-    }
-
-    String adjHStr = " NULL";
-    if (this.adjunctHost != null) {
-      adjHStr = " (ADJ " +
-          ((TagWord) (this.adjunctHost.getUserObject())).getText() + ")";
-    }
-
-    String NPDHStr = " NULL";
-    if (this.NPDomainHost != null) {
-      NPDHStr = " (NPDomain " +
-          ((TagWord) (this.NPDomainHost.getUserObject())).getText() + ")";
-    }
-
-    String argHeadStr = " NULL";
-    if (this.argumentHead != null) {
-      NPDHStr = " (ARGHead " +
-          ((TagWord) (this.argumentHead.getUserObject())).getText() + ")";
-    }
+    String argHStr = getString("ARG", argumentHost);
+    String adjHStr = getString("ADJ ", adjunctHost);
+    String NPDHStr = getString("NPDomain", NPDomainHost);
+    String argHeadStr = getString("ARGHead", argumentHead);
 
     String containHostStr = " NULL";
-    if (this.containHost.size() > 0) {
+    if (containHost.size() > 0) {
       containHostStr = " (containHost ";
-      for (int i = 0; i < containHost.size(); i++) {
-        containHostStr +=
-            ((TagWord) ((DefaultMutableTreeNode) containHost.get(i)).
-                getUserObject()).getText() + "/";
+      for (TreeNode tn : containHost) {
+        containHostStr += Utils.getTagWord(tn).getText() + "/";
       }
       containHostStr += ") ";
     }
 
-    if (this.tag.startsWith("NP")
-        || this.tag.startsWith("PP")
-        || this.tag.startsWith("VP")) {
+    if (tag.startsWith("NP")
+        || tag.startsWith("PP")
+        || tag.startsWith("VP")) {
       localhead = " (HEAD " + localhead + ")";
-    }
-    else {
+    } else {
       localhead = "";
     }
 
     String npShow;
-    NP np = this.getNP();
     if (np != null) {
       npShow = np.toString();
-    }
-    else {
+    } else {
       npShow = "no NP";
     }
 
@@ -572,7 +519,7 @@ public class TagWord {
         + " "
         + getText()
         + " <NUMBER> "
-        + this.number
+        + number
         + localhead
         + argHStr
         + argHeadStr

@@ -1,4 +1,4 @@
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
 import java.io.File;
 import java.io.IOException;

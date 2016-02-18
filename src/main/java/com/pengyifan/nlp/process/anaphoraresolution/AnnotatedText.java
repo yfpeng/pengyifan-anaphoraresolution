@@ -21,7 +21,7 @@
  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package edu.nus.comp.nlp.tool.anaphoraresolution;
+package com.pengyifan.nlp.process.anaphoraresolution;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,6 +48,10 @@ public class AnnotatedText {
     return new AnnotatedText(sentences);
   }
 
+  public AnnotatedText(String sentence) {
+    this(Lists.newArrayList(sentence));
+  }
+
   public static AnnotatedText parseAnnotatedText(String s) {
     List<String> sents = Lists.newArrayList();
     String[] sentenceList = s.split("\\(S1 ");
@@ -60,25 +64,22 @@ public class AnnotatedText {
     return new AnnotatedText(sents);
   }
 
-  // DefaultMutableTreeNode instance inside.overlapping allowed
   private List<TagWord> NPList;
-  // DefaultMutableTreeNode instance inside.overlapping disallowed
   private List<TagWord> SNPList;
-  // DefaultMutableTreeNode instance inside.overlapping disallowed
   private List<TagWord> PRPList;
 
   private DefaultMutableTreeNode rootNode;
 
   private AnnotatedText(List<String> sentences) {
+    Tree2TreeNode converter = new Tree2TreeNode();
+
     rootNode = new DefaultMutableTreeNode();
     for (int i = 0; i < sentences.size(); i++) {
       String sentence = sentences.get(i);
-      TreeAdapter adpater = new TreeAdapter(Tree.valueOf(sentence), i);
-      DefaultMutableTreeNode tn = adpater.getDefaultMutableTreeNode();
+      DefaultMutableTreeNode tn = converter.apply(Tree.valueOf(sentence), i);
       rootNode.add(tn);
     }
 
-    // rootNode = buildParseTree(sents);
     NPExtractor ex = new NPExtractor(rootNode);
     NPList = ex.getNPList();
     PRPList = ex.getPRPList();
