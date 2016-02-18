@@ -59,12 +59,12 @@ public class NPExtractor {
     DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
     String parentTag = Utils.getTag(parentNode);
 
-    // set 'Subject' true if it's a child of a unit tagged as "S"
+    // Set 'Subject' true if it's a child of a unit tagged as "S"
     if (parentTag.equals("S")) {
       np.setSubject(true);
     }
 
-    // set 'existential' true if it's a object of a VP, which in turn follows a NP(subject?) who
+    // Set 'existential' true if it's a object of a VP, which in turn follows a NP(subject?) who
     // has a single child tagging as 'EX'
     //
     // EX, existential "there"
@@ -83,6 +83,9 @@ public class NPExtractor {
 
     // set 'directObj' true if it's the only NP child of a VP, or second NP of a VP whileas the
     // first NP is 'indirectObj'
+    //
+    // Handle: "give him a book" and "kick him"
+    // Not: "give a book to him"
     if (parentTag.equalsIgnoreCase("VP")) {
       if (parentNode.getIndex(node) == 1) {
         // object (second child) of a VP
@@ -99,38 +102,38 @@ public class NPExtractor {
       }
     }
 
-    // set head for a NP, set the rightmost N* as the head, even it's not a leaf
+    // Set head for a NP, set the rightmost N* as the head, even it's not a leaf
     // for "NP" or "PRP"
-    TreeNode h = findFirstChildNode(node, "N", -1, true);
-    if (h == null) {
-      h = findFirstChildNode(node, "PRP", -1, false);
-    }
-    if (h != null) {
-      tw.setHead(h);
-    }
-    // reselect head for people
-    if (node.getChildCount() > 1) {
-      boolean allNNP = true;
-      Enumeration emu = node.children();
-      while (emu.hasMoreElements()) {
-        TreeNode child = (TreeNode) emu.nextElement();
-        if (!Utils.equalsIgnoreCaseTag(child, "NNP")) {
-          allNNP = false;
-          break;
-        }
-      }
-allNNP is always false.
-      while (allNNP && emu.hasMoreElements()) {
-        TreeNode hPeople = (TreeNode) emu.nextElement();
-        TagWord hPTw = Utils.getTagWord(hPeople);
-        // label the first name, if there is one, as the head of a NP representing a people
-        if (HumanList.isFemale(hPTw.getText())
-            || HumanList.isMale(hPTw.getText())) {
-          tw.setHead(hPeople);
-          break;
-        }
-      }
-    }
+//    TreeNode h = findFirstChildNode(node, "N", -1, true);
+//    if (h == null) {
+//      h = findFirstChildNode(node, "PRP", -1, false);
+//    }
+//    if (h != null) {
+//      tw.setHead(h);
+//    }
+//    // reselect head for people
+//    if (node.getChildCount() > 1) {
+//      boolean allNNP = true;
+//      Enumeration emu = node.children();
+//      while (emu.hasMoreElements()) {
+//        TreeNode child = (TreeNode) emu.nextElement();
+//        if (!Utils.equalsIgnoreCaseTag(child, "NNP")) {
+//          allNNP = false;
+//          break;
+//        }
+//      }
+//allNNP is always false.
+//      while (allNNP && emu.hasMoreElements()) {
+//        TreeNode hPeople = (TreeNode) emu.nextElement();
+//        TagWord hPTw = Utils.getTagWord(hPeople);
+//        // label the first name, if there is one, as the head of a NP representing a people
+//        if (HumanList.isFemale(hPTw.getText())
+//            || HumanList.isMale(hPTw.getText())) {
+//          tw.setHead(hPeople);
+//          break;
+//        }
+//      }
+//    }
 
     // Connect NP with its argumentHost, i.e., the NP in the same argument domain
     // We consider NP and the NP in it's sibling VP. Lets say

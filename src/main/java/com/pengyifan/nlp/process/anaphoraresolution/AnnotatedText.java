@@ -44,24 +44,8 @@ import edu.stanford.nlp.trees.Tree;
 
 public class AnnotatedText {
 
-  public static AnnotatedText parseAnnotatedText(List<String> sentences) {
-    return new AnnotatedText(sentences);
-  }
-
   public AnnotatedText(String sentence) {
     this(Lists.newArrayList(sentence));
-  }
-
-  public static AnnotatedText parseAnnotatedText(String s) {
-    List<String> sents = Lists.newArrayList();
-    String[] sentenceList = s.split("\\(S1 ");
-    for (int i = 0; i < sentenceList.length; i++) {
-      String sentence = sentenceList[i];
-      if (!sentence.trim().isEmpty()) {
-        sents.add("(S1 " + sentence.trim());
-      }
-    }
-    return new AnnotatedText(sents);
   }
 
   private List<TagWord> NPList;
@@ -70,7 +54,7 @@ public class AnnotatedText {
 
   private DefaultMutableTreeNode rootNode;
 
-  private AnnotatedText(List<String> sentences) {
+  public AnnotatedText(List<String> sentences) {
     Tree2TreeNode converter = new Tree2TreeNode();
 
     rootNode = new DefaultMutableTreeNode();
@@ -83,7 +67,6 @@ public class AnnotatedText {
     NPExtractor ex = new NPExtractor(rootNode);
     NPList = ex.getNPList();
     PRPList = ex.getPRPList();
-
     identifyPleonasticPronoun(rootNode);
     SNPList = buildSNPList(NPList);
   }
