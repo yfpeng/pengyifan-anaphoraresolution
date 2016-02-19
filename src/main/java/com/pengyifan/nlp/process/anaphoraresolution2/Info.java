@@ -9,4 +9,8 @@ public class Info {
   DependencyGraphVertex head;
   Collection<DependencyGraphVertex> arguments;
   Collection<DependencyGraphVertex> adjuncts;
+
+  public Info() {
+    argumentFeature = new ArgumentFeature();
+  }
 }
