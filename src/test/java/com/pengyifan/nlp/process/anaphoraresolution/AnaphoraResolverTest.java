@@ -8,8 +8,8 @@ import java.util.List;
 public class AnaphoraResolverTest {
 
   // The woman said that he is funny.
-  public static final String s1 = "(S1 (S (S (NP (DT The) (NN woman)) (VP (VBD said) (SBAR (IN " +
-      "that) (S (NP (NN he)) (VP (VBZ is) (ADJP (JJ funny))))))) (. .)))";
+  public static final String s1 = "(S1 (S (S (NP (DT The) (NN woman)) (VP (VBD said) (SBAR (IN" +
+      " that) (S (NP (NN he)) (VP (VBZ is) (ADJP (JJ funny))))))) (. .)))";
   // She likes her.
   public static final String s2 = "(S1 (S (S (NP (PRP She)) (VP (VBZ likes) (NP (PRP$ her)))) (. " +
       ".)))";
@@ -39,7 +39,7 @@ public class AnaphoraResolverTest {
   public void testNo() throws Exception {
     for (String s: Lists.newArrayList(s1, s2, s3, s4, s5, s6, s7, s8, s9)) {
       System.out.println(s);
-      AnnotatedText aText = AnnotatedText.parseAnnotatedText(s);
+      AnnotatedText aText = new AnnotatedText(s);
       AnaphoraResolver u = new AnaphoraResolver();
       List<CorreferencialPair> vet = u.resolverV1(
           aText.getNPList(),
@@ -78,7 +78,7 @@ public class AnaphoraResolverTest {
   public void testYes() throws Exception {
     for (String s: Lists.newArrayList(s10, s11, s12, s13, s14, s15, s16)) {
       System.out.println(s);
-      AnnotatedText aText = AnnotatedText.parseAnnotatedText(s);
+      AnnotatedText aText = new AnnotatedText(s);
       AnaphoraResolver u = new AnaphoraResolver();
       List<CorreferencialPair> vet = u.resolverV1(
           aText.getNPList(),

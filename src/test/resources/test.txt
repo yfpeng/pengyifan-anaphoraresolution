@@ -1,4 +1,3 @@
-# no
 The woman said that he is funny.
 She likes her.
 John seems to want to see him.
@@ -8,8 +7,6 @@ This is the man he said John wrote about.
 John's portrait of him is interesting.
 His portrait of John is interesting.
 His description of the portrait by John is interesting.
-
-# yes
 They wanted to see themselves .
 Mary knows the people who John introduced to each other.
 He worked by himself.
