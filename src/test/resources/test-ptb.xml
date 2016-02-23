@@ -1,0 +1,158 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<collection>
+  <source>../pengyifan-anaphoraresolution/src/test/resources/test.txt</source>
+  <date>2016-02-19</date>
+  <key></key>
+  <infon key="process">parse</infon>
+  <infon key="tool">Bllip</infon>
+  <document>
+    <id>foo</id>
+    <passage>
+      <offset>0</offset>
+      <sentence>
+        <offset>0</offset>
+        <text>The woman said that he is funny.</text>
+        <annotation id="T0">
+          <infon key="parse tree">(S1 (S (S (NP (DT The) (NN woman)) (VP (VBD said) (SBAR (IN that) (S (NP (NN he)) (VP (VBZ is) (ADJP (JJ funny))))))) (. .)))</infon>
+          <location length="32" offset="0"/>
+          <text>The woman said that he is funny.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>33</offset>
+        <text>She likes her.</text>
+        <annotation id="T1">
+          <infon key="parse tree">(S1 (S (S (NP (PRP She)) (VP (VBZ likes) (NP (PRP$ her)))) (. .)))</infon>
+          <location length="14" offset="33"/>
+          <text>She likes her.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>48</offset>
+        <text>John seems to want to see him.</text>
+        <annotation id="T2">
+          <infon key="parse tree">(S1 (S (S (NP (NN John)) (VP (VBZ seems) (S (VP (TO to) (VP (VBP want) (S (VP (TO to) (VP (VB see) (NP (NN him)))))))))) (. .)))</infon>
+          <location length="30" offset="48"/>
+          <text>John seems to want to see him.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>79</offset>
+        <text>She sat near her .</text>
+        <annotation id="T3">
+          <infon key="parse tree">(S1 (S (S (NP (PRP She)) (VP (VBD sat) (PP (IN near) (NP (PRP$ her))))) (. .)))</infon>
+          <location length="18" offset="79"/>
+          <text>She sat near her .</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>98</offset>
+        <text>He believes that the man is amusing.</text>
+        <annotation id="T4">
+          <infon key="parse tree">(S1 (S (S (NP (NN He)) (VP (VBZ believes) (SBAR (IN that) (S (NP (DT the) (NN man)) (VP (VBZ is) (NP (NN amusing))))))) (. .)))</infon>
+          <location length="36" offset="98"/>
+          <text>He believes that the man is amusing.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>135</offset>
+        <text>This is the man he said John wrote about.</text>
+        <annotation id="T5">
+          <infon key="parse tree">(S1 (S (S (S (NP (DT This)) (VP (VBZ is) (NP (DT the) (NN man) (NN he) (NN said)))) (S (NP (NNP John)) (VP (VBP wrote) (PRT (RP about))))) (. .)))</infon>
+          <location length="41" offset="135"/>
+          <text>This is the man he said John wrote about.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>177</offset>
+        <text>John's portrait of him is interesting.</text>
+        <annotation id="T6">
+          <infon key="parse tree">(S1 (S (S (NP (NP (NP (NN John) (POS 's)) (NN portrait)) (PP (IN of) (NP (NN him)))) (VP (VBZ is) (ADJP (JJ interesting)))) (. .)))</infon>
+          <location length="38" offset="177"/>
+          <text>John's portrait of him is interesting.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>216</offset>
+        <text>His portrait of John is interesting.</text>
+        <annotation id="T7">
+          <infon key="parse tree">(S1 (S (S (NP (NP (NN His) (NN portrait)) (PP (IN of) (NP (NNP John)))) (VP (VBZ is) (ADJP (JJ interesting)))) (. .)))</infon>
+          <location length="36" offset="216"/>
+          <text>His portrait of John is interesting.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>253</offset>
+        <text>His description of the portrait by John is interesting.</text>
+        <annotation id="T8">
+          <infon key="parse tree">(S1 (S (S (NP (NP (NN His) (NN description)) (PP (IN of) (NP (DT the) (NN portrait))) (PP (IN by) (NP (NNP John)))) (VP (VBZ is) (ADJP (JJ interesting)))) (. .)))</infon>
+          <location length="55" offset="253"/>
+          <text>His description of the portrait by John is interesting.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>309</offset>
+        <text>They wanted to see themselves .</text>
+        <annotation id="T9">
+          <infon key="parse tree">(S1 (S (S (NP (PRP They)) (VP (VBD wanted) (S (VP (TO to) (VP (VB see) (NP (PRP themselves))))))) (. .)))</infon>
+          <location length="31" offset="309"/>
+          <text>They wanted to see themselves .</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>341</offset>
+        <text>Mary knows the people who John introduced to each other.</text>
+        <annotation id="T10">
+          <infon key="parse tree">(S1 (S (S (NP (JJ Mary)) (VP (VBZ knows) (NP (NP (DT the) (NN people)) (SBAR (WHNP (WP who) (NN John)) (S (VP (VBN introduced) (PP (TO to) (NP (DT each) (JJ other))))))))) (. .)))</infon>
+          <location length="56" offset="341"/>
+          <text>Mary knows the people who John introduced to each other.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>398</offset>
+        <text>He worked by himself.</text>
+        <annotation id="T11">
+          <infon key="parse tree">(S1 (S (S (NP (NN He)) (VP (VBD worked) (PP (IN by) (NP (PRP himself))))) (. .)))</infon>
+          <location length="21" offset="398"/>
+          <text>He worked by himself.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>420</offset>
+        <text>Which friends plan to travel with each other?</text>
+        <annotation id="T12">
+          <infon key="parse tree">(S1 (S (S (SBAR (WHNP (WDT Which)) (S (VP (NNS friends) (NP (NN plan))))) (TO to) (VP (VBP travel) (PP (IN with) (NP (DT each) (JJ other))))) (. ?)))</infon>
+          <location length="45" offset="420"/>
+          <text>Which friends plan to travel with each other?</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>466</offset>
+        <text>John likes Bill's portrait of himself.</text>
+        <annotation id="T13">
+          <infon key="parse tree">(S1 (S (S (NP (NN John)) (VP (VBZ likes) (NP (NP (NP (NN Bill) (POS 's)) (NN portrait)) (PP (IN of) (NP (PRP himself)))))) (. .)))</infon>
+          <location length="38" offset="466"/>
+          <text>John likes Bill's portrait of himself.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>505</offset>
+        <text>They told stories about themselves.</text>
+        <annotation id="T14">
+          <infon key="parse tree">(S1 (S (S (NP (PRP They)) (VP (VBN told) (NP (NNS stories)) (PP (IN about) (NP (PRP themselves))))) (. .)))</infon>
+          <location length="35" offset="505"/>
+          <text>They told stories about themselves.</text>
+        </annotation>
+      </sentence>
+      <sentence>
+        <offset>541</offset>
+        <text>John and Mary like each other's portraits.</text>
+        <annotation id="T15">
+          <infon key="parse tree">(S1 (S (S (NP (NP (NN John)) (CC and) (NP (JJ Mary))) (PP (IN like) (NP (NP (DT each) (JJ other) (POS 's)) (NNS portraits)))) (. .)))</infon>
+          <location length="42" offset="541"/>
+          <text>John and Mary like each other's portraits.</text>
+        </annotation>
+      </sentence>
+    </passage>
+  </document>
+</collection>

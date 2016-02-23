@@ -27,6 +27,7 @@ import java.lang.*;
 import java.util.List;
 import java.util.Objects;
 
+import edu.stanford.nlp.dcoref.Dictionaries.Gender;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 
@@ -50,10 +51,10 @@ public class TagWord {
 
   private int sentenceIndex; // indicates sentence
   private int wordIndex;
-  private Number number = Number.UNCLEAR;
-  private Gender gender = Gender.UNCLEAR;
+  private Number number = Number.UNKNOWN;
+  private Gender gender = Gender.UNKNOWN;
   private Human human = Human.UNCLEAR;
-  private People people = People.UNCLEAR;
+  private People people = People.UNKNOWN;
 
   private boolean pleonastic = false; // represents a pleonastic pronoun
   private String tag;
@@ -157,7 +158,7 @@ public class TagWord {
    * @return 0 for Male, 2 for Female and 1 for unclear
    */
   public Gender getGender() {
-    if (gender != Gender.UNCLEAR) {
+    if (gender != Gender.UNKNOWN) {
       return gender;
     }
     String h = head == null ? text : Utils.getTagWord(head).getText();
@@ -182,7 +183,7 @@ public class TagWord {
       return human;
     }
 
-    if (gender != Gender.UNCLEAR) {
+    if (gender != Gender.UNKNOWN) {
       human = Human.HUMAN;
       return human;
     }
@@ -223,7 +224,7 @@ public class TagWord {
   }
 
   public Number getNumber() {
-    if (number != Number.UNCLEAR) {
+    if (number != Number.UNKNOWN) {
       return number;
     }
     String tag = np.getTagWord().getTag();
@@ -243,7 +244,7 @@ public class TagWord {
   }
 
   public People getPeople() {
-    if (people != People.UNCLEAR) {
+    if (people != People.UNKNOWN) {
       return people;
     }
     if (getText().toLowerCase().matches("we|us")) {
@@ -257,7 +258,7 @@ public class TagWord {
   }
 
   public People getPronounPeople() {
-    if (people != People.UNCLEAR) {
+    if (people != People.UNKNOWN) {
       return people;
     }
     String h = (head == null) ? text : Utils.getTagWord(head).getText();
@@ -269,7 +270,7 @@ public class TagWord {
     } else if (HumanList.isFirstPerson(h)) {
       people = People.FIRST;
     } else {
-      people = People.UNCLEAR;
+      people = People.UNKNOWN;
     }
     return people;
   }
@@ -433,7 +434,7 @@ public class TagWord {
   }
 
   public void setHead(TreeNode n) {
-    if (number != Number.UNCLEAR) {
+    if (number != Number.UNKNOWN) {
       // number should be set afterword
       System.err.println("Number shouldn't be set before setHead.");
     }

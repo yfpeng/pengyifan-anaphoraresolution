@@ -16,7 +16,6 @@ import com.pengyifan.commons.convert.Entity2BratEntity;
 import com.pengyifan.commons.io.AbstractBatchProcessor;
 import com.pengyifan.commons.io.BasenameUtils;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,12 +25,12 @@ import java.util.Optional;
 
 public class PrepareText extends AbstractBatchProcessor {
   public static void main(String[] args) throws Exception {
-    Path bratInDir = Paths.get("../pengyifan-rules/tmp/bionlp2011/BioNLP-ST_2011_genia_devel_data_rev1");
+    Path bratInDir = Paths.get("../pengyifan-rules/tmp/bionlp2011/BioNLP-ST_2011_genia_train_data_rev1");
 
     PrepareText s = new PrepareText(BasenameUtils.getTextBasenames(bratInDir));
     s.bratInDir = bratInDir;
-    s.bratOutDir = Paths.get("tmp/BioNLP-ST_2011_genia_devel_data_coref");
-    s.sdgFile = Paths.get("../pengyifan-rules/tmp/bionlp2011/bionlp2011_ge_devel-sdg.xml");
+    s.bratOutDir = Paths.get("tmp/BioNLP-ST_2011_genia_train_data_coref");
+    s.sdgFile = Paths.get("../pengyifan-rules/tmp/bionlp2011/bionlp2011_ge_train-sdg.xml");
     s.process();
   }
 

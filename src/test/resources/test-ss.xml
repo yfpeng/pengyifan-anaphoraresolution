@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<collection>
+  <source>../pengyifan-anaphoraresolution/src/test/resources/test.txt</source>
+  <date>2016-02-19</date>
+  <key></key>
+  <document>
+    <id>foo</id>
+    <passage>
+      <offset>0</offset>
+      <sentence>
+        <offset>0</offset>
+        <text>The woman said that he is funny.</text>
+      </sentence>
+      <sentence>
+        <offset>33</offset>
+        <text>She likes her.</text>
+      </sentence>
+      <sentence>
+        <offset>48</offset>
+        <text>John seems to want to see him.</text>
+      </sentence>
+      <sentence>
+        <offset>79</offset>
+        <text>She sat near her .</text>
+      </sentence>
+      <sentence>
+        <offset>98</offset>
+        <text>He believes that the man is amusing.</text>
+      </sentence>
+      <sentence>
+        <offset>135</offset>
+        <text>This is the man he said John wrote about.</text>
+      </sentence>
+      <sentence>
+        <offset>177</offset>
+        <text>John's portrait of him is interesting.</text>
+      </sentence>
+      <sentence>
+        <offset>216</offset>
+        <text>His portrait of John is interesting.</text>
+      </sentence>
+      <sentence>
+        <offset>253</offset>
+        <text>His description of the portrait by John is interesting.</text>
+      </sentence>
+      <sentence>
+        <offset>309</offset>
+        <text>They wanted to see themselves .</text>
+      </sentence>
+      <sentence>
+        <offset>341</offset>
+        <text>Mary knows the people who John introduced to each other.</text>
+      </sentence>
+      <sentence>
+        <offset>398</offset>
+        <text>He worked by himself.</text>
+      </sentence>
+      <sentence>
+        <offset>420</offset>
+        <text>Which friends plan to travel with each other?</text>
+      </sentence>
+      <sentence>
+        <offset>466</offset>
+        <text>John likes Bill's portrait of himself.</text>
+      </sentence>
+      <sentence>
+        <offset>505</offset>
+        <text>They told stories about themselves.</text>
+      </sentence>
+      <sentence>
+        <offset>541</offset>
+        <text>John and Mary like each other's portraits.</text>
+      </sentence>
+    </passage>
+  </document>
+</collection>

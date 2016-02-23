@@ -28,6 +28,7 @@ import java.lang.*;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.stanford.nlp.dcoref.Dictionaries.Gender;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 
@@ -275,16 +276,16 @@ public class AnaphoraResolver {
    */
   private boolean morphologicalFilter(TagWord npTw, TagWord prpTw) {
     if (prpTw.getGender() != npTw.getGender()
-        && prpTw.getGender() != Gender.UNCLEAR
-        && npTw.getGender() != Gender.UNCLEAR) {
+        && prpTw.getGender() != Gender.UNKNOWN
+        && npTw.getGender() != Gender.UNKNOWN) {
       return false;
     } else if (npTw.getNumber() != prpTw.getNumber()
-        && npTw.getNumber() != Number.UNCLEAR
-        && prpTw.getNumber() != Number.UNCLEAR) {
+        && npTw.getNumber() != Number.UNKNOWN
+        && prpTw.getNumber() != Number.UNKNOWN) {
       return false;
     } else if (npTw.getPronounPeople() != prpTw.getPronounPeople()
-        && npTw.getPronounPeople() != People.UNCLEAR
-        && prpTw.getPronounPeople() != People.UNCLEAR) {
+        && npTw.getPronounPeople() != People.UNKNOWN
+        && prpTw.getPronounPeople() != People.UNKNOWN) {
       // getPronounIdx also assigns the predicate "people" as well
       return false;
     } else if (npTw.getHuman() != prpTw.getHuman()
@@ -292,8 +293,8 @@ public class AnaphoraResolver {
         && prpTw.getHuman() != Human.UNCLEAR) {
       return false;
     } else if (npTw.getPeople() != prpTw.getPeople()
-        && npTw.getPeople() != People.UNCLEAR
-        && prpTw.getPeople() != People.UNCLEAR) {
+        && npTw.getPeople() != People.UNKNOWN
+        && prpTw.getPeople() != People.UNKNOWN) {
       return false;
     } else {
       return true;
